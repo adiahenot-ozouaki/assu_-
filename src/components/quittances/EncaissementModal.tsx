@@ -3,50 +3,49 @@ import { X, CreditCard, Smartphone, Banknote, CheckCircle2 } from 'lucide-react'
 import { encaisserQuittance } from '../../lib/quittances.service';
 import { formatCurrency, formatDate } from '../../lib/supabase';
 import type { Quittance } from '../../types';
-import { Button, Spinner } from '../ui';
+import { Button } from '../ui';
 import { clsx } from 'clsx';
 
-// ── Mode paiement options ─────────────────────────────────────
 const MODES = [
   {
     value: 'mobile_money' as const,
     label: 'Mobile Money',
     icon: <Smartphone size={20} />,
     placeholder: 'N° transaction Airtel/Moov Money',
-    color: 'border-orange-200 bg-orange-50 text-orange-700',
-    selectedColor: 'border-orange-400 bg-orange-100',
+    color: 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/15 dark:text-orange-300',
+    selectedColor: 'border-orange-400 bg-orange-100 dark:border-orange-400 dark:bg-orange-500/25',
   },
   {
     value: 'especes' as const,
     label: 'Espèces',
     icon: <Banknote size={20} />,
     placeholder: 'Référence reçu caisse',
-    color: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    selectedColor: 'border-emerald-400 bg-emerald-100',
+    color: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300',
+    selectedColor: 'border-emerald-400 bg-emerald-100 dark:border-emerald-400 dark:bg-emerald-500/25',
   },
   {
     value: 'virement' as const,
     label: 'Virement',
     icon: <CreditCard size={20} />,
     placeholder: 'Référence virement bancaire',
-    color: 'border-blue-200 bg-blue-50 text-blue-700',
-    selectedColor: 'border-blue-400 bg-blue-100',
+    color: 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-300',
+    selectedColor: 'border-blue-400 bg-blue-100 dark:border-blue-400 dark:bg-blue-500/25',
   },
   {
     value: 'cheque' as const,
     label: 'Chèque',
     icon: <span className="text-lg">📄</span>,
     placeholder: 'N° de chèque',
-    color: 'border-purple-200 bg-purple-50 text-purple-700',
-    selectedColor: 'border-purple-400 bg-purple-100',
+    color: 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-300',
+    selectedColor: 'border-purple-400 bg-purple-100 dark:border-purple-400 dark:bg-purple-500/25',
   },
   {
     value: 'carte' as const,
     label: 'Carte bancaire',
     icon: <CreditCard size={20} />,
     placeholder: 'Référence TPE',
-    color: 'border-gray-200 bg-gray-50 text-gray-700',
-    selectedColor: 'border-gray-400 bg-gray-100',
+    color: 'border-border bg-surface-3 text-ink',
+    selectedColor: 'border-border-strong bg-surface-3',
   },
 ];
 
@@ -84,33 +83,39 @@ export function EncaissementModal({ quittance, onClose, onSuccess }: Encaissemen
       setStep('success');
       onSuccess(res.quittance);
     } catch (err: any) {
-      setError(err.message ?? 'Erreur lors de l\'encaissement');
+      setError(err.message ?? "Erreur lors de l'encaissement");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    /* Backdrop */
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="encaissement-title"
+    >
+      <div className="bg-surface-2 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-border">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">
+            <h2 id="encaissement-title" className="text-base font-semibold text-ink">
               {step === 'success' ? '✅ Encaissement confirmé' : 'Encaisser une quittance'}
             </h2>
-            <p className="text-xs text-gray-400 mt-0.5">{quittance.numero}</p>
+            <p className="text-xs text-ink-subtle mt-0.5">{quittance.numero}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition-colors">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-ink-subtle hover:text-ink transition-colors"
+            aria-label="Fermer"
+          >
             <X size={18} />
           </button>
         </div>
 
-        {/* Quittance summary */}
         {step !== 'success' && (
-          <div className="mx-6 mt-4 p-4 bg-[#0A1628] rounded-xl text-white">
+          <div className="mx-6 mt-4 p-4 bg-navy rounded-xl text-white">
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs text-white/50">Quittance</p>
@@ -127,10 +132,9 @@ export function EncaissementModal({ quittance, onClose, onSuccess }: Encaissemen
           </div>
         )}
 
-        {/* ── STEP 1: Mode de paiement ── */}
         {step === 'mode' && (
           <div className="p-6 space-y-4">
-            <p className="text-sm font-medium text-gray-700">Mode de paiement</p>
+            <p className="text-sm font-medium text-ink">Mode de paiement</p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {MODES.map(m => (
                 <button
@@ -139,30 +143,26 @@ export function EncaissementModal({ quittance, onClose, onSuccess }: Encaissemen
                   onClick={() => setMode(m.value)}
                   className={clsx(
                     'flex flex-col items-center gap-2 p-3 rounded-xl border-2 text-sm font-medium transition-all',
-                    mode === m.value ? m.selectedColor + ' border-2' : 'border-gray-100 hover:border-gray-200 text-gray-600'
+                    mode === m.value
+                      ? m.selectedColor + ' border-2'
+                      : 'border-border hover:border-border-strong text-ink-muted'
                   )}
                 >
-                  <span className={mode === m.value ? '' : 'text-gray-400'}>{m.icon}</span>
+                  <span className={mode === m.value ? '' : 'text-ink-subtle'} aria-hidden>{m.icon}</span>
                   {m.label}
                 </button>
               ))}
             </div>
-            <Button
-              className="w-full mt-2"
-              disabled={!mode}
-              onClick={() => setStep('details')}
-            >
+            <Button className="w-full mt-2" disabled={!mode} onClick={() => setStep('details')}>
               Continuer →
             </Button>
           </div>
         )}
 
-        {/* ── STEP 2: Détails ── */}
         {step === 'details' && selectedMode && (
           <div className="p-6 space-y-4">
-            {/* Mode recap */}
             <div className={clsx('flex items-center gap-3 p-3 rounded-lg border', selectedMode.color)}>
-              {selectedMode.icon}
+              <span aria-hidden>{selectedMode.icon}</span>
               <span className="text-sm font-medium">{selectedMode.label}</span>
               <button
                 type="button"
@@ -173,34 +173,34 @@ export function EncaissementModal({ quittance, onClose, onSuccess }: Encaissemen
               </button>
             </div>
 
-            {/* Référence */}
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="ref-paiement" className="block text-sm font-medium text-ink">
                 Référence {mode !== 'especes' ? '*' : '(optionnelle)'}
               </label>
               <input
+                id="ref-paiement"
                 type="text"
                 value={reference}
                 onChange={e => setReference(e.target.value)}
                 placeholder={selectedMode.placeholder}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C875] focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-surface-2 text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
               />
             </div>
 
-            {/* Date */}
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Date de paiement</label>
+              <label htmlFor="date-paiement" className="block text-sm font-medium text-ink">Date de paiement</label>
               <input
+                id="date-paiement"
                 type="date"
                 value={datePaiement}
                 max={new Date().toISOString().slice(0, 10)}
                 onChange={e => setDatePaiement(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C875] focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-surface-2 text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
               />
             </div>
 
             {error && (
-              <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+              <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg" role="alert">{error}</p>
             )}
 
             <div className="flex gap-2 pt-1">
@@ -219,19 +219,18 @@ export function EncaissementModal({ quittance, onClose, onSuccess }: Encaissemen
           </div>
         )}
 
-        {/* ── STEP 3: Succès ── */}
         {step === 'success' && result && (
           <div className="p-6 text-center space-y-4">
-            <div className="w-16 h-16 bg-[#00C875]/15 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle2 size={32} className="text-[#00C875]" />
+            <div className="w-16 h-16 bg-brand-soft rounded-full flex items-center justify-center mx-auto">
+              <CheckCircle2 size={32} className="text-brand" aria-hidden />
             </div>
             <div>
-              <p className="font-semibold text-gray-900">Paiement enregistré !</p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="font-semibold text-ink">Paiement enregistré !</p>
+              <p className="text-sm text-ink-muted mt-1">
                 {formatCurrency(quittance.montant)} encaissés le {formatDate(datePaiement)}
               </p>
             </div>
-            <div className="bg-gray-50 rounded-xl p-4 text-left space-y-2">
+            <div className="bg-surface-3 rounded-xl p-4 text-left space-y-2">
               {[
                 ['Quittance',  quittance.numero],
                 ['Mode',       selectedMode?.label ?? mode],
@@ -239,13 +238,13 @@ export function EncaissementModal({ quittance, onClose, onSuccess }: Encaissemen
                 ['Date',       formatDate(datePaiement)],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between text-sm">
-                  <span className="text-gray-400">{label}</span>
-                  <span className="font-medium text-gray-700">{value}</span>
+                  <span className="text-ink-subtle">{label}</span>
+                  <span className="font-medium text-ink">{value}</span>
                 </div>
               ))}
             </div>
             {result.toutes_payees && (
-              <div className="bg-[#00C875]/10 border border-[#00C875]/30 rounded-lg p-3 text-sm text-[#00A35E] font-medium">
+              <div className="bg-brand-soft border border-brand/30 rounded-lg p-3 text-sm text-brand-dark font-medium">
                 🎉 Toutes les quittances de ce contrat sont réglées !
               </div>
             )}
