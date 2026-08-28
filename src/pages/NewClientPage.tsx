@@ -10,7 +10,7 @@ const PAYS_OPTIONS = [
   { value: 'Gabon', label: 'Gabon' },
   { value: 'Cameroun', label: 'Cameroun' },
   { value: 'Congo', label: 'Congo' },
-  { value: 'Côte d\'Ivoire', label: 'Côte d\'Ivoire' },
+  { value: "Côte d'Ivoire", label: "Côte d'Ivoire" },
   { value: 'Sénégal', label: 'Sénégal' },
   { value: 'France', label: 'France' },
   { value: 'Autre', label: 'Autre' },
@@ -18,7 +18,7 @@ const PAYS_OPTIONS = [
 
 const PIECE_OPTIONS = [
   { value: '', label: 'Sélectionner…' },
-  { value: 'CNI', label: 'Carte Nationale d\'Identité' },
+  { value: 'CNI', label: "Carte Nationale d'Identité" },
   { value: 'Passeport', label: 'Passeport' },
   { value: 'RCCM', label: 'RCCM (entreprise)' },
   { value: 'Autre', label: 'Autre' },
@@ -48,22 +48,26 @@ export default function NewClientPage() {
   };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-5">
+    <div className="p-4 sm:p-6 max-w-2xl mx-auto space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-700 transition-colors">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="text-ink-subtle hover:text-ink transition-colors"
+          aria-label="Retour"
+        >
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Nouveau client</h1>
-          <p className="text-sm text-gray-500">Renseignez les informations du client</p>
+          <h1 className="text-xl font-bold text-ink font-display">Nouveau client</h1>
+          <p className="text-sm text-ink-muted">Renseignez les informations du client</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        {/* Type */}
         <Card className="p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900">Type de client</h2>
-          <div className="flex gap-3">
+          <h2 className="text-sm font-semibold text-ink">Type de client</h2>
+          <div className="flex gap-3" role="group" aria-label="Type de client">
             {[
               { value: false, label: '👤 Personne physique' },
               { value: true,  label: '🏢 Personne morale'  },
@@ -74,8 +78,8 @@ export default function NewClientPage() {
                 onClick={() => setIsPersonneMorale(opt.value)}
                 className={`flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-all ${
                   isPersonneMorale === opt.value
-                    ? 'border-[#00C875] bg-[#00C875]/10 text-[#00A35E]'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    ? 'border-brand bg-brand-soft text-brand-dark'
+                    : 'border-border text-ink-muted hover:border-border-strong'
                 }`}
               >
                 {opt.label}
@@ -84,9 +88,8 @@ export default function NewClientPage() {
           </div>
         </Card>
 
-        {/* Identité */}
         <Card className="p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900">Identité</h2>
+          <h2 className="text-sm font-semibold text-ink">Identité</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {isPersonneMorale ? (
               <div className="sm:col-span-2">
@@ -99,11 +102,7 @@ export default function NewClientPage() {
               </div>
             ) : (
               <>
-                <Input
-                  label="Prénom"
-                  placeholder="Jean"
-                  {...register('prenom')}
-                />
+                <Input label="Prénom" placeholder="Jean" {...register('prenom')} />
                 <Input
                   label="Nom *"
                   placeholder="Moussavou"
@@ -113,78 +112,44 @@ export default function NewClientPage() {
               </>
             )}
             {!isPersonneMorale && (
-              <Input
-                label="Date de naissance"
-                type="date"
-                {...register('date_naissance')}
-              />
+              <Input label="Date de naissance" type="date" {...register('date_naissance')} />
             )}
           </div>
         </Card>
 
-        {/* Contact */}
         <Card className="p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900">Contact</h2>
+          <h2 className="text-sm font-semibold text-ink">Contact</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Téléphone"
-              placeholder="+241 06 000 000"
-              {...register('telephone')}
-            />
-            <Input
-              label="Email"
-              type="email"
-              placeholder="jean@example.com"
-              {...register('email')}
-            />
-            <Input
-              label="Adresse"
-              placeholder="Quartier, rue…"
-              {...register('adresse')}
-            />
-            <Input
-              label="Ville"
-              placeholder="Libreville"
-              {...register('ville')}
-            />
-            <Select
-              label="Pays"
-              options={PAYS_OPTIONS}
-              {...register('pays')}
-            />
+            <Input label="Téléphone" placeholder="+241 06 000 000" {...register('telephone')} />
+            <Input label="Email" type="email" placeholder="jean@example.com" {...register('email')} />
+            <Input label="Adresse" placeholder="Quartier, rue…" {...register('adresse')} />
+            <Input label="Ville" placeholder="Libreville" {...register('ville')} />
+            <Select label="Pays" options={PAYS_OPTIONS} {...register('pays')} />
           </div>
         </Card>
 
-        {/* Pièce d'identité */}
         <Card className="p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900">Pièce d'identité</h2>
+          <h2 className="text-sm font-semibold text-ink">Pièce d'identité</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Select
-              label="Type de pièce"
-              options={PIECE_OPTIONS}
-              {...register('type_piece')}
-            />
-            <Input
-              label="Numéro"
-              placeholder="Ex : 1234567"
-              {...register('numero_piece')}
-            />
+            <Select label="Type de pièce" options={PIECE_OPTIONS} {...register('type_piece')} />
+            <Input label="Numéro" placeholder="Ex : 1234567" {...register('numero_piece')} />
           </div>
         </Card>
 
-        {/* Notes */}
         <Card className="p-5">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">Notes internes</h2>
+          <h2 className="text-sm font-semibold text-ink mb-3">Notes internes</h2>
+          <label htmlFor="client-notes" className="sr-only">Notes internes</label>
           <textarea
+            id="client-notes"
             placeholder="Informations complémentaires…"
             rows={3}
             {...register('notes')}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00C875] focus:border-transparent resize-none"
+            className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
           />
         </Card>
 
         {serverError && (
-          <p className="text-sm text-red-500 bg-red-50 px-4 py-3 rounded-lg">{serverError}</p>
+          <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-4 py-3 rounded-lg" role="alert">{serverError}</p>
         )}
 
         <div className="flex justify-end gap-3 pb-6">

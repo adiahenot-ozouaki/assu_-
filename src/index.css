@@ -6,9 +6,49 @@
 
 @layer base {
   :root {
-    --color-green:      #00C875;
-    --color-green-dark: #00A35E;
-    --color-navy:       #0A1628;
+    /* Brand */
+    --brand: 0 200 117;           /* #00C875 */
+    --brand-dark: 0 163 94;       /* #00A35E */
+    --brand-soft: 232 250 242;    /* #E8FAF2 */
+
+    /* Surfaces */
+    --surface: 240 244 240;       /* page bg */
+    --surface-2: 255 255 255;     /* cards */
+    --surface-3: 249 250 251;     /* muted panels / thead */
+
+    /* Text */
+    --ink: 17 24 39;              /* gray-900 */
+    --ink-muted: 107 114 128;     /* gray-500 */
+    --ink-subtle: 156 163 175;    /* gray-400 */
+
+    /* Borders */
+    --border: 229 231 235;        /* gray-200 */
+    --border-strong: 209 213 219; /* gray-300 */
+
+    /* Sidebar (always dark navy) */
+    --sidebar: 10 22 40;
+    --sidebar-mid: 19 34 64;
+
+    color-scheme: light;
+  }
+
+  .dark {
+    --brand: 0 200 117;
+    --brand-dark: 0 180 100;
+    --brand-soft: 6 40 28;
+
+    --surface: 10 14 22;
+    --surface-2: 17 24 39;
+    --surface-3: 24 32 48;
+
+    --ink: 243 244 246;
+    --ink-muted: 156 163 175;
+    --ink-subtle: 107 114 128;
+
+    --border: 31 41 55;
+    --border-strong: 55 65 81;
+
+    color-scheme: dark;
   }
 
   html {
@@ -18,11 +58,27 @@
 
   body {
     font-family: 'DM Sans', system-ui, sans-serif;
-    background: #F0F4F0;
+    background: rgb(var(--surface));
+    color: rgb(var(--ink));
   }
 
   h1, h2, h3 {
     font-family: 'Syne', system-ui, sans-serif;
+  }
+
+  /* Focus visible global (a11y) */
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand));
+    outline-offset: 2px;
+  }
+
+  /* Reduce motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
@@ -30,8 +86,37 @@
   .font-display {
     font-family: 'Syne', system-ui, sans-serif;
   }
+
   /* Scrollbar discrète */
-  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
   .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 999px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgb(var(--border-strong));
+    border-radius: 999px;
+  }
+
+  /* Skip link */
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+  .skip-link:focus {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    z-index: 100;
+    width: auto;
+    height: auto;
+    padding: 0.75rem 1.25rem;
+    background: rgb(var(--brand));
+    color: white;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
 }

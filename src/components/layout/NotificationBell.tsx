@@ -22,15 +22,20 @@ function timeAgo(dateStr: string): string {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  echeance_proche:        'bg-amber-50 text-amber-700',
-  sinistre_bloque:        'bg-red-50 text-red-700',
-  sinistre_bloque_urgent: 'bg-red-100 text-red-800',
-  quittance_retard:       'bg-red-50 text-red-700',
-  resume_quotidien:       'bg-blue-50 text-blue-700',
-  contrat_expire:         'bg-gray-50 text-gray-700',
+  echeance_proche:        'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
+  sinistre_bloque:        'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300',
+  sinistre_bloque_urgent: 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200',
+  quittance_retard:       'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300',
+  resume_quotidien:       'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300',
+  contrat_expire:         'bg-gray-50 text-gray-700 dark:bg-white/10 dark:text-gray-300',
 };
 
-export function NotificationBell() {
+interface NotificationBellProps {
+  /** 'dark' = sidebar (white icons), 'light' = topbar (ink icons) */
+  variant?: 'dark' | 'light';
+}
+
+export function NotificationBell({ variant = 'dark' }: NotificationBellProps) {
   const navigate = useNavigate();
   const [open, setOpen]               = useState(false);
   const [notifs, setNotifs]           = useState<Notification[]>([]);
@@ -45,16 +50,13 @@ export function NotificationBell() {
     setCount(c);
   }, []);
 
-  // Charger au démarrage
   useEffect(() => { loadNotifs(); }, [loadNotifs]);
 
-  // Polling léger toutes les 2 minutes pour le badge
   useEffect(() => {
     const interval = setInterval(() => countNonLues().then(setCount), 120_000);
     return () => clearInterval(interval);
   }, []);
 
-  // Realtime Supabase : badge se met à jour instantanément
   useEffect(() => {
     const channel = supabase
       .channel('notifications-changes')
@@ -71,7 +73,6 @@ export function NotificationBell() {
     return () => { supabase.removeChannel(channel); };
   }, [open, loadNotifs]);
 
-  // Fermer en cliquant dehors
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -81,6 +82,16 @@ export function NotificationBell() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Escape to close
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
 
   const handleOpen = async () => {
     setOpen(o => !o);
@@ -118,15 +129,21 @@ export function NotificationBell() {
     }
   };
 
+  const btnClass = variant === 'light'
+    ? 'relative w-10 h-10 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-3 transition-all'
+    : 'relative w-9 h-9 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all';
+
   return (
     <div ref={dropdownRef} className="relative">
-      {/* Bell button */}
       <button
+        type="button"
         onClick={handleOpen}
-        className="relative w-9 h-9 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all"
-        aria-label="Notifications"
+        className={btnClass}
+        aria-label={count > 0 ? `Notifications, ${count} non lues` : 'Notifications'}
+        aria-expanded={open}
+        aria-haspopup="true"
       >
-        <Bell size={18} />
+        <Bell size={18} aria-hidden />
         {count > 0 && (
           <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 rounded-full text-white text-[10px] font-bold flex items-center justify-center px-1 animate-pulse">
             {count > 99 ? '99+' : count}
@@ -134,35 +151,40 @@ export function NotificationBell() {
         )}
       </button>
 
-      {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-12 w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <div
+          className="absolute right-0 top-12 w-[min(24rem,calc(100vw-1.5rem))] bg-surface-2 rounded-2xl shadow-card-lg border border-border z-50 overflow-hidden dark:shadow-card-dark"
+          role="menu"
+          aria-label="Liste des notifications"
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div className="flex items-center gap-2">
-              <Bell size={15} className="text-gray-500" />
-              <span className="text-sm font-semibold text-gray-900">Notifications</span>
+              <Bell size={15} className="text-ink-muted" aria-hidden />
+              <span className="text-sm font-semibold text-ink">Notifications</span>
               {count > 0 && (
-                <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                <span className="bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300 text-xs font-bold px-2 py-0.5 rounded-full">
                   {count} non lues
                 </span>
               )}
             </div>
             <div className="flex items-center gap-1">
-              {/* Déclencher manuellement (admin) */}
               <button
+                type="button"
                 onClick={handleTrigger}
                 disabled={triggering}
                 title="Déclencher les notifications maintenant"
-                className="p-1.5 text-gray-400 hover:text-[#00A35E] hover:bg-[#00C875]/10 rounded-lg transition-all"
+                className="p-1.5 text-ink-subtle hover:text-brand-dark hover:bg-brand-soft rounded-lg transition-all"
+                aria-label="Actualiser les notifications"
               >
                 <RefreshCw size={13} className={triggering ? 'animate-spin' : ''} />
               </button>
               {count > 0 && (
                 <button
+                  type="button"
                   onClick={handleMarkAll}
                   title="Tout marquer comme lu"
-                  className="p-1.5 text-gray-400 hover:text-[#00A35E] hover:bg-[#00C875]/10 rounded-lg transition-all"
+                  className="p-1.5 text-ink-subtle hover:text-brand-dark hover:bg-brand-soft rounded-lg transition-all"
+                  aria-label="Tout marquer comme lu"
                 >
                   <CheckCheck size={14} />
                 </button>
@@ -170,65 +192,63 @@ export function NotificationBell() {
             </div>
           </div>
 
-          {/* List */}
-          <div className="max-h-[420px] overflow-y-auto">
+          <div className="max-h-[420px] overflow-y-auto scrollbar-thin">
             {loading && (
               <div className="flex items-center justify-center py-10">
-                <div className="w-5 h-5 border-2 border-[#00C875] border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" role="status" aria-label="Chargement" />
               </div>
             )}
 
             {!loading && notifs.length === 0 && (
               <div className="text-center py-12">
-                <Bell size={32} className="text-gray-200 mx-auto mb-3" />
-                <p className="text-sm text-gray-400">Aucune notification</p>
-                <p className="text-xs text-gray-300 mt-1">Les alertes apparaîtront ici</p>
+                <Bell size={32} className="text-ink-subtle/40 mx-auto mb-3" aria-hidden />
+                <p className="text-sm text-ink-muted">Aucune notification</p>
+                <p className="text-xs text-ink-subtle mt-1">Les alertes apparaîtront ici</p>
               </div>
             )}
 
             {!loading && notifs.map(notif => (
               <button
                 key={notif.id}
+                type="button"
+                role="menuitem"
                 onClick={() => handleClick(notif)}
                 className={clsx(
-                  'w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0',
-                  !notif.lu && 'bg-blue-50/40'
+                  'w-full flex items-start gap-3 px-4 py-3 hover:bg-surface-3 transition-colors text-left border-b border-border last:border-0',
+                  !notif.lu && 'bg-blue-50/40 dark:bg-blue-500/5'
                 )}
               >
-                {/* Icon */}
                 <div className={clsx(
                   'w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0 mt-0.5',
-                  TYPE_COLORS[notif.type] ?? 'bg-gray-50 text-gray-600'
-                )}>
+                  TYPE_COLORS[notif.type] ?? 'bg-surface-3 text-ink-muted'
+                )} aria-hidden>
                   {getNotifIcon(notif.type)}
                 </div>
 
-                {/* Content */}
                 <div className="flex-1 min-w-0">
                   <p className={clsx(
                     'text-sm leading-tight',
-                    notif.lu ? 'text-gray-600' : 'font-semibold text-gray-900'
+                    notif.lu ? 'text-ink-muted' : 'font-semibold text-ink'
                   )}>
                     {notif.titre}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">{notif.message}</p>
-                  <p className="text-xs text-gray-300 mt-1">{timeAgo(notif.created_at)}</p>
+                  <p className="text-xs text-ink-subtle mt-0.5 truncate">{notif.message}</p>
+                  <p className="text-xs text-ink-subtle/70 mt-1">{timeAgo(notif.created_at)}</p>
                 </div>
 
-                {/* Unread dot */}
                 {!notif.lu && (
-                  <div className="w-2 h-2 bg-[#00C875] rounded-full shrink-0 mt-2" />
+                  <div className="w-2 h-2 bg-brand rounded-full shrink-0 mt-2" aria-label="Non lu" />
                 )}
               </button>
             ))}
           </div>
 
-          {/* Footer */}
           {notifs.length > 0 && (
-            <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/50">
+            <div className="px-4 py-2.5 border-t border-border bg-surface-3/50">
               <button
+                type="button"
                 onClick={() => { setOpen(false); navigate('/notifications'); }}
-                className="text-xs text-[#00A35E] hover:underline font-medium"
+                className="text-xs text-brand-dark hover:underline font-medium"
               >
                 Voir toutes les notifications →
               </button>
