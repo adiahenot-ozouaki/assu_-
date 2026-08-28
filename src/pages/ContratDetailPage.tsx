@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Edit, AlertTriangle, CreditCard,
-  FileText, Shield, CheckCircle2, XCircle, Clock, RefreshCw
+  FileText, Shield, CheckCircle2, XCircle, Clock, RefreshCw, GitBranch,
 } from 'lucide-react';
 import { getContratById, updateContrat } from '../lib/contrats.service';
 import { genererQuittances } from '../lib/quittances.service';
+import { getAvenantsContrat, getTransitionsAutorisees, type Avenant } from '../lib/avenants.service';
 import { PdfButton } from '../components/pdf/PdfButton';
+import { AvenantModal } from '../components/contrats/AvenantModal';
+import { AvenantTimeline } from '../components/contrats/AvenantTimeline';
 import type { Contrat, ContratStatus, BranchType, PaiementStatus, SinistreStatus } from '../types';
 import {
   ContratStatusBadge, BranchBadge,
@@ -47,10 +50,15 @@ export default function ContratDetailPage() {
   const [activating, setActivating]     = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [regenMsg, setRegenMsg]         = useState('');
+  const [avenants, setAvenants]         = useState<Avenant[]>([]);
+  const [showAvenantModal, setShowAvenantModal] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    getContratById(id).then(setContrat).finally(() => setLoading(false));
+    getContratById(id).then(c => {
+      setContrat(c);
+      getAvenantsContrat(id).then(setAvenants);
+    }).finally(() => setLoading(false));
   }, [id]);
 
   const handleRegenerate = async () => {
@@ -116,7 +124,7 @@ export default function ContratDetailPage() {
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors">
           <ArrowLeft size={16} /> Retour
         </button>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {contrat.status === 'brouillon' && (
             <Button onClick={handleActivate} loading={activating}>
               <CheckCircle2 size={14} /> Activer le contrat
@@ -130,9 +138,11 @@ export default function ContratDetailPage() {
           {contrat.status === 'actif' && (
             <PdfButton type="attestation" id={contrat.id} ref={contrat.numero} size="sm" />
           )}
-          <Button variant="secondary" onClick={() => navigate(`/contrats/${id}/modifier`)}>
-            <Edit size={14} /> Modifier
-          </Button>
+          {getTransitionsAutorisees(contrat.status).length > 0 && (
+            <Button variant="secondary" onClick={() => setShowAvenantModal(true)}>
+              <GitBranch size={14} /> Avenant
+            </Button>
+          )}
           <Button variant="secondary" onClick={() => navigate(`/sinistres/nouveau?contrat=${id}`)}>
             <AlertTriangle size={14} /> Déclarer sinistre
           </Button>
@@ -349,8 +359,44 @@ export default function ContratDetailPage() {
               </table>
             )}
           </Card>
+
+          {/* Avenants */}
+          <Card className="overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <GitBranch size={14} className="text-purple-500" />
+                Avenants ({avenants.length})
+              </h2>
+              {getTransitionsAutorisees(contrat.status).length > 0 && (
+                <Button size="sm" variant="secondary" onClick={() => setShowAvenantModal(true)}>
+                  + Nouvel avenant
+                </Button>
+              )}
+            </div>
+            <div className="p-5">
+              <AvenantTimeline avenants={avenants} />
+            </div>
+          </Card>
+
         </div>
       </div>
+
+      {/* Modal avenant */}
+      {showAvenantModal && (
+        <AvenantModal
+          contratId={contrat.id}
+          contratNumero={contrat.numero}
+          contratStatus={contrat.status}
+          primeActuelle={contrat.prime_annuelle}
+          devise={contrat.devise}
+          onClose={() => setShowAvenantModal(false)}
+          onSuccess={async (avenant) => {
+            setAvenants(prev => [avenant, ...prev]);
+            const updated = await getContratById(contrat.id);
+            setContrat(updated);
+          }}
+        />
+      )}
     </div>
   );
 }
