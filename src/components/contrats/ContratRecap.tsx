@@ -29,14 +29,12 @@ export function ContratRecap({ data }: RecapProps) {
     .filter(([, v]) => v)
     .map(([k]) => k.replace(/_/g, ' '));
 
-  // Build objet summary lines
   const objetLines = buildObjetSummary(data.branche, data.objet_assure);
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-gray-900">Récapitulatif du contrat</h3>
+      <h3 className="text-sm font-semibold text-ink">Récapitulatif du contrat</h3>
 
-      {/* Branche + produit */}
       {brancheInfo && (
         <RecapSection title="Produit">
           <RecapRow label="Branche" value={`${brancheInfo.icon} ${brancheInfo.label}`} />
@@ -45,7 +43,6 @@ export function ContratRecap({ data }: RecapProps) {
         </RecapSection>
       )}
 
-      {/* Période */}
       {(data.date_effet || data.date_echeance) && (
         <RecapSection title="Période">
           {data.date_effet    && <RecapRow label="Effet"    value={formatDate(data.date_effet)} />}
@@ -53,19 +50,17 @@ export function ContratRecap({ data }: RecapProps) {
         </RecapSection>
       )}
 
-      {/* Objet assuré */}
       {objetLines.length > 0 && (
         <RecapSection title="Objet assuré">
           {objetLines.map(([k, v]) => <RecapRow key={k} label={k} value={v} />)}
         </RecapSection>
       )}
 
-      {/* Garanties */}
       {activeGaranties.length > 0 && (
         <RecapSection title="Garanties">
           <div className="flex flex-wrap gap-1.5 pt-0.5">
             {activeGaranties.map(g => (
-              <span key={g} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00C875]/12 text-[#00A35E] text-xs font-medium capitalize">
+              <span key={g} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-soft text-brand-dark text-xs font-medium capitalize">
                 ✓ {g}
               </span>
             ))}
@@ -73,9 +68,8 @@ export function ContratRecap({ data }: RecapProps) {
         </RecapSection>
       )}
 
-      {/* Prime */}
       {data.prime_annuelle ? (
-        <div className="bg-[#0A1628] rounded-xl p-4 text-white">
+        <div className="bg-navy rounded-xl p-4 text-white">
           <p className="text-xs text-white/50 mb-1">Prime annuelle</p>
           <p className="text-2xl font-bold">{formatCurrency(data.prime_annuelle, data.devise ?? 'FCFA')}</p>
           <p className="text-xs text-white/40 mt-1">
@@ -83,8 +77,8 @@ export function ContratRecap({ data }: RecapProps) {
           </p>
         </div>
       ) : (
-        <div className="bg-gray-50 rounded-xl p-4 text-center">
-          <p className="text-xs text-gray-400">Renseignez la prime pour voir le récapitulatif complet</p>
+        <div className="bg-surface-3 rounded-xl p-4 text-center">
+          <p className="text-xs text-ink-subtle">Renseignez la prime pour voir le récapitulatif complet</p>
         </div>
       )}
     </div>
@@ -94,8 +88,8 @@ export function ContratRecap({ data }: RecapProps) {
 function RecapSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{title}</p>
-      <div className="bg-gray-50 rounded-lg px-3 py-2 space-y-1.5">{children}</div>
+      <p className="text-xs font-semibold text-ink-subtle uppercase tracking-wider mb-2">{title}</p>
+      <div className="bg-surface-3 rounded-lg px-3 py-2 space-y-1.5">{children}</div>
     </div>
   );
 }
@@ -103,13 +97,12 @@ function RecapSection({ title, children }: { title: string; children: React.Reac
 function RecapRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-2 text-sm">
-      <span className="text-gray-500 shrink-0">{label}</span>
-      <span className="font-medium text-gray-800 text-right">{value || '—'}</span>
+      <span className="text-ink-muted shrink-0">{label}</span>
+      <span className="font-medium text-ink text-right">{value || '—'}</span>
     </div>
   );
 }
 
-// Build summary lines from objet_assure JSONB depending on branch
 function buildObjetSummary(branche?: BranchType, obj?: Record<string, any>): [string, string][] {
   if (!obj || !branche) return [];
   const lines: [string, string][] = [];
