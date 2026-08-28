@@ -12,12 +12,11 @@ import { EncaissementModal } from '../components/quittances/EncaissementModal';
 import { PdfButton } from '../components/pdf/PdfButton';
 import { clsx } from 'clsx';
 
-// ── Status config ────────────────────────────────────────────
-const STATUS_CFG: Record<PaiementStatus, { label: string; icon: React.ReactNode; variant: any; bg: string }> = {
-  'payé':       { label: 'Payée',      icon: <CheckCircle2 size={13}/>, variant: 'green',  bg: 'bg-emerald-50 text-emerald-700' },
-  'en_attente': { label: 'En attente', icon: <Clock size={13}/>,        variant: 'amber',  bg: 'bg-amber-50 text-amber-700'    },
-  'en_retard':  { label: 'En retard',  icon: <XCircle size={13}/>,      variant: 'red',    bg: 'bg-red-50 text-red-700'        },
-  'annulé':     { label: 'Annulée',    icon: <AlertCircle size={13}/>,  variant: 'gray',   bg: 'bg-gray-50 text-gray-500'      },
+const STATUS_CFG: Record<PaiementStatus, { label: string; variant: 'green' | 'amber' | 'red' | 'gray' }> = {
+  'payé':       { label: 'Payée',      variant: 'green' },
+  'en_attente': { label: 'En attente', variant: 'amber' },
+  'en_retard':  { label: 'En retard',  variant: 'red'   },
+  'annulé':     { label: 'Annulée',    variant: 'gray'  },
 };
 
 const MODE_LABELS: Record<string, string> = {
@@ -74,70 +73,48 @@ export default function QuittancesPage() {
       prev.map(r => r.id === updated.id ? { ...r, ...updated } : r)
     );
     setModal(null);
-    // Reload stats
     getQuittanceStats().then(setStats);
   };
 
+  const clientName = (row: QuittanceDashboard) =>
+    row.est_personne_morale
+      ? row.raison_sociale
+      : `${row.client_prenom ?? ''} ${row.client_nom}`.trim();
+
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Paiements & Quittances</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{total} quittance{total > 1 ? 's' : ''}</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-ink font-display">Paiements & Quittances</h1>
+          <p className="text-sm text-ink-muted mt-0.5">{total} quittance{total > 1 ? 's' : ''}</p>
         </div>
-        <Button variant="secondary" onClick={load}>
-          <RefreshCw size={14} /> Actualiser
+        <Button variant="secondary" onClick={load} className="self-start sm:self-auto">
+          <RefreshCw size={14} aria-hidden /> Actualiser
         </Button>
       </div>
 
-      {/* KPIs */}
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="Encaissées"
-            value={stats.payees}
-            icon="✅"
-            trend={formatCurrency(stats.montant_encaisse)}
-            color="green"
-          />
-          <StatCard
-            label="En attente"
-            value={stats.en_attente}
-            icon="⏳"
-            trend={formatCurrency(stats.montant_en_attente)}
-            color="blue"
-          />
-          <StatCard
-            label="En retard"
-            value={stats.en_retard}
-            icon="🔴"
-            trend={formatCurrency(stats.montant_en_retard)}
-            color="amber"
-          />
-          <StatCard
-            label="Total quittances"
-            value={stats.total}
-            icon="🧾"
-            color="purple"
-          />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <StatCard label="Encaissées" value={stats.payees} icon="✅" trend={formatCurrency(stats.montant_encaisse)} color="green" />
+          <StatCard label="En attente" value={stats.en_attente} icon="⏳" trend={formatCurrency(stats.montant_en_attente)} color="blue" />
+          <StatCard label="En retard" value={stats.en_retard} icon="🔴" trend={formatCurrency(stats.montant_en_retard)} color="amber" />
+          <StatCard label="Total quittances" value={stats.total} icon="🧾" color="purple" />
         </div>
       )}
 
-      {/* Filtres */}
       <Card className="p-4">
-        <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-48">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+          <div className="relative flex-1 min-w-0 sm:min-w-48">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle" aria-hidden />
             <label htmlFor="quittances-search" className="sr-only">Rechercher une quittance</label>
             <input
               id="quittances-search"
               name="search"
-              type="text"
+              type="search"
               placeholder="Client, N° contrat, N° quittance…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C875] focus:border-transparent"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-lg bg-surface-2 text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
             />
           </div>
           <label htmlFor="quittances-status" className="sr-only">Filtrer par statut</label>
@@ -146,7 +123,7 @@ export default function QuittancesPage() {
             name="status"
             value={status}
             onChange={e => setStatus(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C875] bg-white"
+            className="px-3 py-2 text-sm border border-border rounded-lg bg-surface-2 text-ink focus:outline-none focus:ring-2 focus:ring-brand"
           >
             {STATUS_FILTER_OPTIONS.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -155,11 +132,10 @@ export default function QuittancesPage() {
         </div>
       </Card>
 
-      {/* Table */}
       <Card className="overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Spinner className="w-6 h-6 text-[#00C875]" />
+          <div className="flex items-center justify-center py-16" role="status">
+            <Spinner className="w-6 h-6 text-brand" />
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
@@ -168,111 +144,155 @@ export default function QuittancesPage() {
             description="Activez des contrats pour générer des quittances."
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/60">
-                  {['N° Quittance', 'Client', 'Contrat', 'Période', 'Montant', 'Échéance', 'Statut', ''].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {rows.map(row => {
-                  const cfg    = STATUS_CFG[row.status as PaiementStatus] ?? STATUS_CFG['en_attente'];
-                  const retard = row.jours_retard > 0;
-                  const urgent = !retard && (row.jours_avant_echeance ?? 99) <= 7;
-
-                  return (
-                    <tr key={row.id}
-                      className={clsx(
-                        'hover:bg-gray-50 transition-colors',
-                        retard && 'bg-red-50/40',
-                        urgent && !retard && 'bg-amber-50/30',
-                      )}
-                    >
-                      <td className="px-4 py-3.5">
-                        <span className="font-mono text-xs font-medium text-gray-600">{row.numero}</span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <p className="font-medium text-gray-900 text-sm">
-                          {row.est_personne_morale
-                            ? row.raison_sociale
-                            : `${row.client_prenom ?? ''} ${row.client_nom}`.trim()}
-                        </p>
-                        <p className="text-xs text-gray-400">{row.code_client}</p>
-                      </td>
-                      <td className="px-4 py-3.5">
+          <>
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y divide-border">
+              {rows.map(row => {
+                const cfg = STATUS_CFG[row.status as PaiementStatus] ?? STATUS_CFG['en_attente'];
+                const retard = row.jours_retard > 0;
+                const urgent = !retard && (row.jours_avant_echeance ?? 99) <= 7;
+                return (
+                  <div
+                    key={row.id}
+                    className={clsx(
+                      'p-4 space-y-2',
+                      retard && 'bg-red-50/40 dark:bg-red-500/5',
+                      urgent && !retard && 'bg-amber-50/30 dark:bg-amber-500/5',
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-mono text-xs text-ink-muted">{row.numero}</p>
+                        <p className="font-medium text-ink truncate">{clientName(row)}</p>
                         <button
+                          type="button"
                           onClick={() => navigate(`/contrats/${row.contrat_id}`)}
-                          className="font-mono text-xs text-[#00A35E] hover:underline"
+                          className="font-mono text-xs text-brand-dark hover:underline mt-0.5"
                         >
                           {row.contrat_numero}
                         </button>
-                        <p className="text-xs text-gray-400 capitalize">{row.branche}</p>
-                      </td>
-                      <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
-                        {formatDate(row.periode_debut)}<br/>
-                        <span className="text-gray-300">→</span> {formatDate(row.periode_fin)}
-                      </td>
-                      <td className="px-4 py-3.5 font-bold text-gray-900 whitespace-nowrap">
-                        {formatCurrency(row.montant)}
-                      </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <p className={clsx('text-xs font-medium', retard ? 'text-red-600' : urgent ? 'text-amber-600' : 'text-gray-500')}>
-                          {formatDate(row.date_echeance)}
-                        </p>
-                        {retard && (
-                          <p className="text-xs text-red-500 font-medium">{row.jours_retard}j de retard</p>
+                      </div>
+                      <Badge variant={cfg.variant} dot>{cfg.label}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-bold text-ink">{formatCurrency(row.montant)}</span>
+                      <span className={clsx('text-xs', retard ? 'text-red-600 dark:text-red-400' : urgent ? 'text-amber-600 dark:text-amber-400' : 'text-ink-muted')}>
+                        {formatDate(row.date_echeance)}
+                        {retard && ` · ${row.jours_retard}j retard`}
+                      </span>
+                    </div>
+                    {(row.status === 'en_attente' || row.status === 'en_retard') && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <PdfButton type="quittance" id={row.id} ref={row.numero} variant="icon" mode="both" />
+                        <Button size="sm" onClick={() => setModal(row)}>Encaisser</Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-surface-3/50">
+                    {['N° Quittance', 'Client', 'Contrat', 'Période', 'Montant', 'Échéance', 'Statut', ''].map(h => (
+                      <th key={h || 'actions'} className="px-4 py-3 text-left text-xs font-semibold text-ink-muted uppercase tracking-wider whitespace-nowrap">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {rows.map(row => {
+                    const cfg = STATUS_CFG[row.status as PaiementStatus] ?? STATUS_CFG['en_attente'];
+                    const retard = row.jours_retard > 0;
+                    const urgent = !retard && (row.jours_avant_echeance ?? 99) <= 7;
+
+                    return (
+                      <tr key={row.id}
+                        className={clsx(
+                          'hover:bg-surface-3 transition-colors',
+                          retard && 'bg-red-50/40 dark:bg-red-500/5',
+                          urgent && !retard && 'bg-amber-50/30 dark:bg-amber-500/5',
                         )}
-                        {urgent && !retard && (
-                          <p className="text-xs text-amber-500">{row.jours_avant_echeance}j restants</p>
-                        )}
-                        {row.date_paiement && (
-                          <p className="text-xs text-gray-400">Payée le {formatDate(row.date_paiement)}</p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-1.5">
-                          <Badge variant={cfg.variant} dot>{cfg.label}</Badge>
-                        </div>
-                        {row.mode_paiement && (
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {MODE_LABELS[row.mode_paiement] ?? row.mode_paiement}
+                      >
+                        <td className="px-4 py-3.5">
+                          <span className="font-mono text-xs font-medium text-ink-muted">{row.numero}</span>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <p className="font-medium text-ink text-sm">{clientName(row)}</p>
+                          <p className="text-xs text-ink-subtle">{row.code_client}</p>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/contrats/${row.contrat_id}`)}
+                            className="font-mono text-xs text-brand-dark hover:underline"
+                          >
+                            {row.contrat_numero}
+                          </button>
+                          <p className="text-xs text-ink-subtle capitalize">{row.branche}</p>
+                        </td>
+                        <td className="px-4 py-3.5 text-xs text-ink-muted whitespace-nowrap">
+                          {formatDate(row.periode_debut)}<br />
+                          <span className="text-ink-subtle">→</span> {formatDate(row.periode_fin)}
+                        </td>
+                        <td className="px-4 py-3.5 font-bold text-ink whitespace-nowrap">
+                          {formatCurrency(row.montant)}
+                        </td>
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          <p className={clsx('text-xs font-medium', retard ? 'text-red-600 dark:text-red-400' : urgent ? 'text-amber-600 dark:text-amber-400' : 'text-ink-muted')}>
+                            {formatDate(row.date_echeance)}
                           </p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <PdfButton type="quittance" id={row.id} ref={row.numero} variant="icon" mode="both" />
-                          {(row.status === 'en_attente' || row.status === 'en_retard') && (
-                            <Button size="sm" onClick={() => setModal(row)}>
-                              Encaisser
-                            </Button>
+                          {retard && (
+                            <p className="text-xs text-red-500 dark:text-red-400 font-medium">{row.jours_retard}j de retard</p>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                          {urgent && !retard && (
+                            <p className="text-xs text-amber-500 dark:text-amber-400">{row.jours_avant_echeance}j restants</p>
+                          )}
+                          {row.date_paiement && (
+                            <p className="text-xs text-ink-subtle">Payée le {formatDate(row.date_paiement)}</p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <Badge variant={cfg.variant} dot>{cfg.label}</Badge>
+                          {row.mode_paiement && (
+                            <p className="text-xs text-ink-subtle mt-0.5">
+                              {MODE_LABELS[row.mode_paiement] ?? row.mode_paiement}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <PdfButton type="quittance" id={row.id} ref={row.numero} variant="icon" mode="both" />
+                            {(row.status === 'en_attente' || row.status === 'en_retard') && (
+                              <Button size="sm" onClick={() => setModal(row)}>
+                                Encaisser
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+            <p className="text-xs text-ink-subtle">
               Page {page} sur {totalPages} · {total} quittances
             </p>
             <div className="flex gap-1">
-              <Button variant="ghost" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+              <Button variant="ghost" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)} aria-label="Page précédente">
                 <ChevronLeft size={14} />
               </Button>
-              <Button variant="ghost" size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
+              <Button variant="ghost" size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)} aria-label="Page suivante">
                 <ChevronRight size={14} />
               </Button>
             </div>
@@ -280,7 +300,6 @@ export default function QuittancesPage() {
         )}
       </Card>
 
-      {/* Modal encaissement */}
       {modal && (
         <EncaissementModal
           quittance={modal}
