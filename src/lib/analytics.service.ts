@@ -44,6 +44,7 @@ export interface PortefeuilleBranche {
 }
 
 export interface Sinistralite {
+  contrats_actifs: number;
   branche: string;
   nb_sinistres: number;
   montant_declare_total: number;
