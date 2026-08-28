@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, ArrowRight, Save, AlertTriangle } from 'lucide-react';
-import { creerSinistre, uploadDocument } from '../lib/sinistres.service';
+import { creerSinistre } from '../lib/sinistres.service';
 import { getContrats } from '../lib/contrats.service';
 import { useAuth } from '../hooks/useAuth';
 import type { Contrat, BranchType } from '../types';
 import type { NouveauSinistreForm, SinistreDocument } from '../types/sinistres';
 import { Stepper } from '../components/ui/Stepper';
 import { PhotoUploader } from '../components/sinistres/PhotoUploader';
-import { Button, Card, Input, Spinner } from '../components/ui';
+import { Button, Card, Input } from '../components/ui';
 import { formatCurrency, formatDate } from '../lib/supabase';
 import { clsx } from 'clsx';
 
@@ -32,6 +32,9 @@ const BRANCH_ICONS: Record<string, string> = {
   auto: '🚗', mrh: '🏠', sante: '🏥', vie: '❤️', autre: '📋',
 };
 
+const taClass =
+  'w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-2 text-ink focus:outline-none focus:ring-2 focus:ring-brand resize-none placeholder:text-ink-subtle';
+
 export default function NewSinistrePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -52,7 +55,6 @@ export default function NewSinistrePage() {
     },
   });
 
-  // Pre-select contrat from URL
   useEffect(() => {
     const cid = searchParams.get('contrat');
     if (cid) {
@@ -66,7 +68,6 @@ export default function NewSinistrePage() {
     }
   }, [searchParams, setValue]);
 
-  // Filter contrats by search
   const filteredContrats = contrats.filter(c => {
     const nom = c.client?.est_personne_morale
       ? c.client.raison_sociale ?? ''
@@ -87,7 +88,6 @@ export default function NewSinistrePage() {
   const next = () => { if (canNext()) setStep(s => Math.min(s + 1, STEPS.length - 1)); };
   const prev = () => setStep(s => Math.max(s - 1, 0));
 
-  // Submit : crée le sinistre puis attache les documents
   const onSubmit = async (data: NouveauSinistreForm) => {
     setSaving(true);
     setServerError('');
@@ -99,7 +99,7 @@ export default function NewSinistrePage() {
         montant_declare: data.montant_declare ? Number(data.montant_declare) : undefined,
       });
       setCreatedId(sinistre.id);
-      setStep(2); // Go to upload step with the real sinistre_id
+      setStep(2);
     } catch (err: any) {
       setServerError(err.message ?? 'Erreur lors de la création');
     } finally {
@@ -112,33 +112,35 @@ export default function NewSinistrePage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      {/* Back */}
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-700 transition-colors">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="text-ink-subtle hover:text-ink transition-colors"
+          aria-label="Retour"
+        >
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Déclarer un sinistre</h1>
-          <p className="text-sm text-gray-500">Étape {step + 1} sur {STEPS.length}</p>
+          <h1 className="text-xl font-bold text-ink font-display">Déclarer un sinistre</h1>
+          <p className="text-sm text-ink-muted">Étape {step + 1} sur {STEPS.length}</p>
         </div>
       </div>
 
-      {/* Stepper */}
       <Card className="p-5 mb-6">
         <Stepper steps={STEPS} current={step} />
       </Card>
 
-      {/* ── STEP 0 : Sélection contrat ── */}
       {step === 0 && (
-        <Card className="p-6 space-y-5">
+        <Card className="p-5 sm:p-6 space-y-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-xl">
-              <AlertTriangle size={20} className="text-amber-600" />
+            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center shrink-0">
+              <AlertTriangle size={20} className="text-amber-600 dark:text-amber-400" aria-hidden />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Contrat concerné</h2>
-              <p className="text-sm text-gray-500">Sélectionnez le contrat sur lequel déclarer le sinistre</p>
+              <h2 className="text-base font-semibold text-ink">Contrat concerné</h2>
+              <p className="text-sm text-ink-muted">Sélectionnez le contrat sur lequel déclarer le sinistre</p>
             </div>
           </div>
 
@@ -149,16 +151,18 @@ export default function NewSinistrePage() {
             />
           ) : (
             <div className="space-y-3">
+              <label htmlFor="contrat-search" className="sr-only">Rechercher un contrat</label>
               <input
-                type="text"
+                id="contrat-search"
+                type="search"
                 placeholder="Rechercher par n° contrat ou nom client…"
                 value={contratSearch}
                 onChange={e => setContratSearch(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C875]"
+                className="w-full px-3 py-2.5 text-sm border border-border rounded-lg bg-surface-2 text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-brand"
               />
-              <div className="space-y-2 max-h-80 overflow-y-auto">
+              <div className="space-y-2 max-h-80 overflow-y-auto scrollbar-thin">
                 {filteredContrats.length === 0 && (
-                  <p className="text-sm text-gray-400 text-center py-8">Aucun contrat actif trouvé.</p>
+                  <p className="text-sm text-ink-subtle text-center py-8">Aucun contrat actif trouvé.</p>
                 )}
                 {filteredContrats.map(c => (
                   <ContratOption
@@ -173,22 +177,20 @@ export default function NewSinistrePage() {
 
           <div className="flex justify-end">
             <Button onClick={next} disabled={!canNext()}>
-              Suivant <ArrowRight size={15} />
+              Suivant <ArrowRight size={15} aria-hidden />
             </Button>
           </div>
         </Card>
       )}
 
-      {/* ── STEP 1 : Déclaration ── */}
       {step === 1 && (
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Card className="p-6 space-y-5">
-            <h2 className="text-base font-semibold text-gray-900">Informations du sinistre</h2>
+          <Card className="p-5 sm:p-6 space-y-5">
+            <h2 className="text-base font-semibold text-ink">Informations du sinistre</h2>
 
-            {/* Nature */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Nature du sinistre *</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <p className="block text-sm font-medium text-ink">Nature du sinistre *</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" role="group" aria-label="Nature du sinistre">
                 {natureOptions.map(n => {
                   const selected = watch('nature') === n;
                   return (
@@ -196,11 +198,12 @@ export default function NewSinistrePage() {
                       key={n}
                       type="button"
                       onClick={() => setValue('nature', n)}
+                      aria-pressed={selected}
                       className={clsx(
                         'text-left px-3 py-2.5 rounded-lg border-2 text-sm font-medium transition-all',
                         selected
-                          ? 'border-[#00C875] bg-[#00C875]/10 text-[#00A35E]'
-                          : 'border-gray-100 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                          ? 'border-brand bg-brand-soft text-brand-dark'
+                          : 'border-border text-ink-muted hover:border-border-strong hover:bg-surface-3'
                       )}
                     >
                       {n}
@@ -208,7 +211,7 @@ export default function NewSinistrePage() {
                   );
                 })}
               </div>
-              {errors.nature && <p className="text-xs text-red-500">Requis</p>}
+              {errors.nature && <p className="text-xs text-red-500 dark:text-red-400">Requis</p>}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -226,31 +229,32 @@ export default function NewSinistrePage() {
               />
             </div>
 
-            {/* Description */}
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Description des faits *</label>
+              <label htmlFor="desc-sinistre" className="block text-sm font-medium text-ink">Description des faits *</label>
               <textarea
+                id="desc-sinistre"
                 rows={4}
-                placeholder="Décrivez précisément les circonstances du sinistre : date, heure, lieu, circonstances, tiers impliqués…"
+                placeholder="Décrivez précisément les circonstances du sinistre…"
                 {...register('description', { required: 'Requis' })}
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00C875] resize-none placeholder:text-gray-400"
+                className={taClass}
               />
-              {errors.description && <p className="text-xs text-red-500">Requis</p>}
+              {errors.description && <p className="text-xs text-red-500 dark:text-red-400">Requis</p>}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Montant des dommages estimé (FCFA)</label>
+                <label htmlFor="montant-declare" className="block text-sm font-medium text-ink">Montant des dommages estimé (FCFA)</label>
                 <div className="relative">
                   <input
+                    id="montant-declare"
                     type="number"
                     min={0}
                     step={1000}
                     placeholder="Ex : 500 000"
                     {...register('montant_declare', { min: 0 })}
-                    className="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 pr-16 text-sm focus:outline-none focus:ring-2 focus:ring-[#00C875] focus:border-transparent placeholder:text-gray-400"
+                    className="block w-full rounded-lg border border-border bg-surface-2 px-3 py-2 pr-16 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent placeholder:text-ink-subtle"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">FCFA</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-subtle">FCFA</span>
                 </div>
               </div>
               <Input
@@ -261,37 +265,37 @@ export default function NewSinistrePage() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Notes internes</label>
+              <label htmlFor="notes-sinistre" className="block text-sm font-medium text-ink">Notes internes</label>
               <textarea
+                id="notes-sinistre"
                 rows={2}
                 placeholder="Informations complémentaires pour les gestionnaires…"
                 {...register('notes')}
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00C875] resize-none placeholder:text-gray-400"
+                className={taClass}
               />
             </div>
 
             {serverError && (
-              <p className="text-sm text-red-500 bg-red-50 px-4 py-3 rounded-lg">{serverError}</p>
+              <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-4 py-3 rounded-lg" role="alert">{serverError}</p>
             )}
 
             <div className="flex justify-between pt-1">
               <Button type="button" variant="secondary" onClick={prev}>
-                <ArrowLeft size={15} /> Précédent
+                <ArrowLeft size={15} aria-hidden /> Précédent
               </Button>
               <Button type="submit" loading={saving}>
-                <Save size={15} /> Enregistrer et continuer
+                <Save size={15} aria-hidden /> Enregistrer et continuer
               </Button>
             </div>
           </Card>
         </form>
       )}
 
-      {/* ── STEP 2 : Upload documents ── */}
       {step === 2 && createdId && (
-        <Card className="p-6 space-y-5">
+        <Card className="p-5 sm:p-6 space-y-5">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Pièces justificatives</h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <h2 className="text-base font-semibold text-ink">Pièces justificatives</h2>
+            <p className="text-sm text-ink-muted mt-1">
               Ajoutez photos, constats, factures et tout document utile à l'instruction du dossier.
             </p>
           </div>
@@ -308,35 +312,32 @@ export default function NewSinistrePage() {
               Passer cette étape
             </Button>
             <Button onClick={() => setStep(3)}>
-              Continuer <ArrowRight size={15} />
+              Continuer <ArrowRight size={15} aria-hidden />
             </Button>
           </div>
         </Card>
       )}
 
-      {/* ── STEP 2 sans sinistre créé (ne devrait pas arriver) ── */}
       {step === 2 && !createdId && (
-        <Card className="p-6 text-center text-gray-500">
+        <Card className="p-6 text-center text-ink-muted">
           <p>Une erreur est survenue. Veuillez recommencer.</p>
           <Button className="mt-4" onClick={() => setStep(1)}>Retour</Button>
         </Card>
       )}
 
-      {/* ── STEP 3 : Confirmation ── */}
       {step === 3 && (
-        <Card className="p-8 text-center space-y-5">
-          <div className="w-20 h-20 bg-[#00C875]/15 rounded-full flex items-center justify-center mx-auto">
+        <Card className="p-6 sm:p-8 text-center space-y-5">
+          <div className="w-20 h-20 bg-brand-soft rounded-full flex items-center justify-center mx-auto" aria-hidden>
             <span className="text-4xl">✅</span>
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Sinistre déclaré avec succès</h2>
-            <p className="text-sm text-gray-500 mt-2">
+            <h2 className="text-xl font-bold text-ink font-display">Sinistre déclaré avec succès</h2>
+            <p className="text-sm text-ink-muted mt-2">
               Le dossier a été ouvert et est en attente d'instruction.
             </p>
           </div>
 
-          {/* Recap */}
-          <div className="bg-gray-50 rounded-xl p-5 text-left space-y-3 max-w-sm mx-auto">
+          <div className="bg-surface-3 rounded-xl p-5 text-left space-y-3 max-w-sm mx-auto">
             {selectedContrat && (
               <>
                 <RecapLine label="Client" value={
@@ -371,7 +372,6 @@ export default function NewSinistrePage() {
   );
 }
 
-// ── Sub-components ────────────────────────────────────────────
 function SelectedContratCard({ contrat, onClear }: { contrat: Contrat; onClear: () => void }) {
   const branche = contrat.produit?.branche as BranchType | undefined;
   const clientNom = contrat.client?.est_personne_morale
@@ -379,13 +379,13 @@ function SelectedContratCard({ contrat, onClear }: { contrat: Contrat; onClear: 
     : `${contrat.client?.prenom ?? ''} ${contrat.client?.nom ?? ''}`.trim();
 
   return (
-    <div className="flex items-center justify-between p-4 bg-[#00C875]/8 border-2 border-[#00C875] rounded-xl">
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">{BRANCH_ICONS[branche ?? 'autre']}</span>
-        <div>
-          <p className="font-semibold text-gray-900">{clientNom}</p>
-          <p className="text-sm text-gray-500">{contrat.numero} · {contrat.produit?.nom}</p>
-          <p className="text-xs text-gray-400 mt-0.5">
+    <div className="flex items-center justify-between p-4 bg-brand-soft border-2 border-brand rounded-xl gap-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="text-2xl shrink-0" aria-hidden>{BRANCH_ICONS[branche ?? 'autre']}</span>
+        <div className="min-w-0">
+          <p className="font-semibold text-ink truncate">{clientNom}</p>
+          <p className="text-sm text-ink-muted">{contrat.numero} · {contrat.produit?.nom}</p>
+          <p className="text-xs text-ink-subtle mt-0.5">
             Prime : {formatCurrency(contrat.prime_annuelle)} · Échéance : {formatDate(contrat.date_echeance)}
           </p>
         </div>
@@ -393,7 +393,7 @@ function SelectedContratCard({ contrat, onClear }: { contrat: Contrat; onClear: 
       <button
         type="button"
         onClick={onClear}
-        className="text-xs text-gray-400 hover:text-red-500 transition-colors underline"
+        className="text-xs text-ink-subtle hover:text-red-500 transition-colors underline shrink-0"
       >
         Changer
       </button>
@@ -411,16 +411,16 @@ function ContratOption({ contrat, onSelect }: { contrat: Contrat; onSelect: () =
     <button
       type="button"
       onClick={onSelect}
-      className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-[#00C875]/40 hover:bg-[#00C875]/5 transition-all text-left"
+      className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-border hover:border-brand/40 hover:bg-brand-soft transition-all text-left"
     >
-      <span className="text-xl shrink-0">{BRANCH_ICONS[branche ?? 'autre']}</span>
+      <span className="text-xl shrink-0" aria-hidden>{BRANCH_ICONS[branche ?? 'autre']}</span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">{clientNom}</p>
-        <p className="text-xs text-gray-400">{contrat.numero} · {contrat.produit?.nom}</p>
+        <p className="text-sm font-medium text-ink truncate">{clientNom}</p>
+        <p className="text-xs text-ink-subtle">{contrat.numero} · {contrat.produit?.nom}</p>
       </div>
       <div className="text-right shrink-0">
-        <p className="text-xs font-semibold text-gray-700">{formatCurrency(contrat.prime_annuelle)}</p>
-        <p className="text-xs text-gray-400">/an</p>
+        <p className="text-xs font-semibold text-ink">{formatCurrency(contrat.prime_annuelle)}</p>
+        <p className="text-xs text-ink-subtle">/an</p>
       </div>
     </button>
   );
@@ -429,8 +429,8 @@ function ContratOption({ contrat, onSelect }: { contrat: Contrat; onSelect: () =
 function RecapLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-2 text-sm">
-      <span className="text-gray-400 shrink-0">{label}</span>
-      <span className="font-medium text-gray-800 text-right">{value || '—'}</span>
+      <span className="text-ink-subtle shrink-0">{label}</span>
+      <span className="font-medium text-ink text-right">{value || '—'}</span>
     </div>
   );
 }
