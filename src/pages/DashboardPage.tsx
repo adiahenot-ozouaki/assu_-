@@ -33,8 +33,8 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Spinner className="w-8 h-8 text-[#00C875]" />
+      <div className="flex items-center justify-center h-full" role="status">
+        <Spinner className="w-8 h-8 text-brand" />
       </div>
     );
   }
@@ -44,25 +44,26 @@ export default function DashboardPage() {
   const greet = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {greet}, {profile?.prenom} 👋
+          <h1 className="text-xl sm:text-2xl font-bold text-ink font-display">
+            {greet}, {profile?.prenom}{' '}
+            <span aria-hidden>👋</span>
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-ink-muted mt-0.5">
             {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full">
-          <TrendingUp size={13} />
+        <div className="flex items-center gap-2 text-xs text-ink-subtle bg-surface-3 px-3 py-1.5 rounded-full self-start">
+          <TrendingUp size={13} aria-hidden />
           Données en temps réel
         </div>
       </div>
 
       {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           label="Total clients"
           value={stats?.clients.total ?? 0}
@@ -93,9 +94,8 @@ export default function DashboardPage() {
 
       {/* Bottom row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Répartition branches */}
         <Card className="p-5 col-span-1">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">Contrats par branche</h2>
+          <h2 className="text-sm font-semibold text-ink mb-4">Contrats par branche</h2>
           <div className="space-y-3">
             {Object.entries(stats?.contrats.parBranche ?? {}).map(([branche, count]) => {
               const cfg = BRANCH_LABELS[branche] ?? { label: branche, icon: '📋' };
@@ -104,12 +104,14 @@ export default function DashboardPage() {
               return (
                 <div key={branche}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-600">{cfg.icon} {cfg.label}</span>
-                    <span className="text-sm font-medium text-gray-900">{count}</span>
+                    <span className="text-sm text-ink-muted">
+                      <span aria-hidden>{cfg.icon}</span> {cfg.label}
+                    </span>
+                    <span className="text-sm font-medium text-ink">{count}</span>
                   </div>
-                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-surface-3 rounded-full overflow-hidden" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${cfg.label} ${pct}%`}>
                     <div
-                      className="h-full bg-[#00C875] rounded-full transition-all"
+                      className="h-full bg-brand rounded-full transition-all"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -117,15 +119,14 @@ export default function DashboardPage() {
               );
             })}
             {!Object.keys(stats?.contrats.parBranche ?? {}).length && (
-              <p className="text-sm text-gray-400 text-center py-4">Aucun contrat</p>
+              <p className="text-sm text-ink-subtle text-center py-4">Aucun contrat</p>
             )}
           </div>
         </Card>
 
-        {/* Accès rapides */}
-        <Card className="p-5 col-span-2">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">Accès rapides</h2>
-          <div className="grid grid-cols-2 gap-3">
+        <Card className="p-5 col-span-1 lg:col-span-2">
+          <h2 className="text-sm font-semibold text-ink mb-4">Accès rapides</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { to: '/clients/nouveau',   icon: '👤', label: 'Nouveau client',   desc: 'Créer une fiche client' },
               { to: '/contrats/nouveau',  icon: '📝', label: 'Nouveau contrat',  desc: 'Émettre un contrat'     },
@@ -135,14 +136,14 @@ export default function DashboardPage() {
               <Link
                 key={item.to}
                 to={item.to}
-                className="flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:border-[#00C875]/30 hover:bg-[#00C875]/5 transition-all group"
+                className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-brand/30 hover:bg-brand-soft transition-all group"
               >
-                <span className="text-2xl">{item.icon}</span>
+                <span className="text-2xl" aria-hidden>{item.icon}</span>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 group-hover:text-[#00A35E]">{item.label}</p>
-                  <p className="text-xs text-gray-400 truncate">{item.desc}</p>
+                  <p className="text-sm font-medium text-ink group-hover:text-brand-dark">{item.label}</p>
+                  <p className="text-xs text-ink-subtle truncate">{item.desc}</p>
                 </div>
-                <ArrowRight size={14} className="ml-auto text-gray-300 group-hover:text-[#00C875] shrink-0" />
+                <ArrowRight size={14} className="ml-auto text-ink-subtle group-hover:text-brand shrink-0" aria-hidden />
               </Link>
             ))}
           </div>
