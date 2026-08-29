@@ -33,12 +33,11 @@ export function AutoObjetForm({ register, errors, prefix = 'objet_assure' }: Aut
     <div className="space-y-5">
       <SectionTitle icon="🚗" title="Identification du véhicule" />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Marque */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">Marque *</label>
+          <label className="block text-sm font-medium text-ink">Marque *</label>
           <select
             {...register(f('marque'), { required: 'Requis' })}
-            className="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00C875] focus:border-transparent"
+            className="block w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           >
             <option value="">Sélectionner…</option>
             {MARQUES.map(m => <option key={m} value={m}>{m}</option>)}
@@ -121,7 +120,6 @@ export function AutoObjetForm({ register, errors, prefix = 'objet_assure' }: Aut
   );
 }
 
-// ── Garanties Auto ────────────────────────────────────────────
 const AUTO_GARANTIES = [
   { key: 'rc',            label: 'Responsabilité Civile',   required: true  },
   { key: 'defense',       label: 'Défense et Recours',      required: false },
@@ -149,8 +147,8 @@ export function AutoGaranties({ values, onChange }: GarantiesProps) {
             key={g.key}
             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
               values[g.key]
-                ? 'border-[#00C875] bg-[#00C875]/8'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-brand bg-brand-soft'
+                : 'border-border hover:border-border-strong'
             } ${g.required ? 'opacity-80' : ''}`}
           >
             <input
@@ -158,11 +156,11 @@ export function AutoGaranties({ values, onChange }: GarantiesProps) {
               checked={!!values[g.key]}
               disabled={g.required}
               onChange={e => onChange(g.key, e.target.checked)}
-              className="accent-[#00C875] w-4 h-4"
+              className="accent-brand w-4 h-4"
             />
             <div>
-              <span className="text-sm font-medium text-gray-800">{g.label}</span>
-              {g.required && <span className="ml-1.5 text-xs text-gray-400">(obligatoire)</span>}
+              <span className="text-sm font-medium text-ink">{g.label}</span>
+              {g.required && <span className="ml-1.5 text-xs text-ink-subtle">(obligatoire)</span>}
             </div>
           </label>
         ))}
@@ -174,9 +172,9 @@ export function AutoGaranties({ values, onChange }: GarantiesProps) {
 function SectionTitle({ icon, title }: { icon: string; title: string }) {
   return (
     <div className="flex items-center gap-2 pt-1">
-      <span className="text-base">{icon}</span>
-      <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
-      <div className="flex-1 h-px bg-gray-100" />
+      <span className="text-base" aria-hidden>{icon}</span>
+      <h3 className="text-sm font-semibold text-ink">{title}</h3>
+      <div className="flex-1 h-px bg-surface-3" />
     </div>
   );
 }
