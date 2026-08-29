@@ -1,4 +1,4 @@
-# AssurZen ERP — Guide de déploiement des Edge Functions
+# AssurZen ERP — Déploiement Edge Functions & migrations
 
 ## Prérequis
 
@@ -8,105 +8,93 @@ supabase login
 supabase link --project-ref <VOTRE_PROJECT_REF>
 ```
 
-## 1. Créer le bucket Storage
+---
 
-Dans **Supabase Dashboard → Storage → New Bucket** :
+## 1. Migrations SQL (ordre strict)
 
-| Champ   | Valeur                 |
-|---------|------------------------|
-| Name    | `sinistres-documents`  |
-| Public  | ❌ Non (accès signé)   |
+Dans **Supabase → SQL Editor**, exécuter :
 
-Puis dans **Storage → Policies**, ajouter pour `sinistres-documents` :
+| # | Fichier | Contenu |
+|---|---------|---------|
+| 1 | `001_init_schema.sql` | Tables, RLS de base, seed produits |
+| 2 | `002_quittances_triggers.sql` | Génération / encaissement / retards |
+| 3 | `003_sinistres_storage.sql` | Sinistres, documents, bucket policies |
+| 4 | `004_notifications.sql` | Table notifications + helpers |
+| 5 | `005_analytics.sql` | Vues / RPC reporting |
+| 6 | `fix_001_rls_profiles.sql` | Correctifs RLS profiles |
+
+---
+
+## 2. Bucket Storage
+
+**Storage → New Bucket**
+
+| Champ | Valeur |
+|-------|--------|
+| Name | `sinistres-documents` |
+| Public | Non (URLs signées) |
+
+Policies (si non déjà dans `003`) :
 
 ```sql
--- SELECT : utilisateurs authentifiés
 CREATE POLICY "read_auth" ON storage.objects FOR SELECT
   TO authenticated USING (bucket_id = 'sinistres-documents');
 
--- INSERT : utilisateurs authentifiés
 CREATE POLICY "insert_auth" ON storage.objects FOR INSERT
   TO authenticated WITH CHECK (bucket_id = 'sinistres-documents');
 
--- DELETE : auteur ou admin
 CREATE POLICY "delete_auth" ON storage.objects FOR DELETE
   TO authenticated USING (
     bucket_id = 'sinistres-documents'
-    AND (auth.uid()::text = (storage.foldername(name))[1]
-         OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'))
+    AND (
+      auth.uid()::text = (storage.foldername(name))[1]
+      OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    )
   );
 ```
 
-## 2. Variables d'environnement (secrets)
+---
+
+## 3. Secrets Edge Functions
 
 ```bash
 supabase secrets set SUPABASE_URL=https://xxxx.supabase.co
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJ...
 supabase secrets set SUPABASE_ANON_KEY=eyJ...
+# Optionnel — emails (notifications-cron)
+# supabase secrets set RESEND_API_KEY=re_...
 ```
 
-## 3. Déployer toutes les Edge Functions
+---
+
+## 4. Déployer les fonctions
 
 ```bash
 # Depuis la racine du projet
-supabase functions deploy generer-quittances   --no-verify-jwt
-supabase functions deploy encaisser-quittance  --no-verify-jwt
-supabase functions deploy sinistre-documents   --no-verify-jwt
-supabase functions deploy generer-pdf          --no-verify-jwt
+supabase functions deploy generer-quittances  --no-verify-jwt
+supabase functions deploy encaisser-quittance --no-verify-jwt
+supabase functions deploy sinistre-documents  --no-verify-jwt
+supabase functions deploy generer-pdf         --no-verify-jwt
+supabase functions deploy notifications-cron  --no-verify-jwt
 ```
 
-> **Note** : `--no-verify-jwt` laisse Supabase vérifier le JWT automatiquement.
-> La vérification est faite dans chaque fonction via `requireAuth()`.
+> `--no-verify-jwt` laisse la vérification au code (`requireAuth()` dans `_shared/helpers.ts`).  
+> Ne pas exposer les fonctions sans contrôle d’auth interne.
 
-## 4. Appliquer les migrations SQL
-
-Dans **Supabase Dashboard → SQL Editor**, exécuter dans l'ordre :
-
-```
-1. supabase/migrations/001_init_schema.sql
-2. supabase/migrations/002_quittances_triggers.sql
-3. supabase/migrations/003_sinistres_storage.sql
-```
-
-## 5. Vérifier les déploiements
+Vérification :
 
 ```bash
 supabase functions list
 ```
 
-Résultat attendu :
-```
-┌─────────────────────────┬─────────┬────────────┐
-│ Name                    │ Status  │ Version    │
-├─────────────────────────┼─────────┼────────────┤
-│ generer-quittances      │ ACTIVE  │ ...        │
-│ encaisser-quittance     │ ACTIVE  │ ...        │
-│ sinistre-documents      │ ACTIVE  │ ...        │
-│ generer-pdf             │ ACTIVE  │ ...        │
-└─────────────────────────┴─────────┴────────────┘
-```
+---
 
-## 6. Tester localement (optionnel)
+## 5. Cron jobs (Dashboard SQL)
 
-```bash
-supabase start
-supabase functions serve generer-pdf --env-file .env.local
-
-# Test avec curl
-curl -X POST http://localhost:54321/functions/v1/generer-pdf \
-  -H "Authorization: Bearer <TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"type":"attestation","id":"<CONTRAT_UUID>"}' \
-  --output test_attestation.pdf
-```
-
-## 7. Activer pg_cron (mise à jour retards quotidienne)
-
-Dans **Supabase Dashboard → Database → Extensions** → activer `pg_cron`.
-
-Puis dans SQL Editor :
+Activer l’extension **pg_cron**, puis :
 
 ```sql
+-- Quittances en retard (chaque jour 07:00)
 SELECT cron.schedule(
   'maj-retards-quotidien',
   '0 7 * * *',
@@ -114,22 +102,38 @@ SELECT cron.schedule(
 );
 ```
 
-## Architecture des Edge Functions
+Pour les **notifications** (échéances, sinistres bloqués…), planifier un appel HTTP vers l’Edge Function (via pg_net ou un scheduler externe) vers :
+
+`POST /functions/v1/notifications-cron`  
+avec un JWT service role ou un secret partagé selon votre implémentation.
+
+Depuis l’UI, un admin peut aussi déclencher le cron via le bouton « Actualiser » de la cloche / page Notifications.
+
+---
+
+## 6. Test local (optionnel)
+
+```bash
+supabase start
+supabase functions serve generer-pdf --env-file .env.local
+
+curl -X POST http://localhost:54321/functions/v1/generer-pdf \
+  -H "Authorization: Bearer <ACCESS_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"type":"attestation","id":"<CONTRAT_UUID>"}' \
+  --output test_attestation.pdf
+```
+
+---
+
+## Architecture fonctions
 
 ```
 supabase/functions/
-├── _shared/
-│   └── helpers.ts              ← CORS, auth, json helpers
+├── _shared/helpers.ts
 ├── generer-quittances/
-│   └── index.ts                ← Régénération manuelle quittances
 ├── encaisser-quittance/
-│   └── index.ts                ← Enregistrement paiement
 ├── sinistre-documents/
-│   └── index.ts                ← Upload/list/delete via Storage
-└── generer-pdf/
-    ├── index.ts                ← Router : attestation | quittance | sinistre
-    ├── pdfHelpers.ts           ← Primitives pdf-lib (couleurs, layout, fonts)
-    ├── attestation.ts          ← Template attestation d'assurance
-    ├── quittance.ts            ← Template quittance de prime
-    └── ficheSinistre.ts        ← Template fiche sinistre
+├── generer-pdf/          (attestation, quittance, ficheSinistre)
+└── notifications-cron/   (alertes + templates email)
 ```
