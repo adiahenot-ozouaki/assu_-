@@ -34,37 +34,6 @@ const BRANCH_CFG: Record<BranchType, { label: string; icon: string }> = {
 type Tab = 'utilisateurs' | 'agences' | 'produits';
 
 // ── Inline edit input ──────────────────────────────────────────
-function InlineInput({ value, onSave, placeholder, type = 'text' }: {
-  value: string; onSave: (v: string) => void;
-  placeholder?: string; type?: string;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [val, setVal]         = useState(value);
-
-  if (!editing) {
-    return (
-      <button onClick={() => setEditing(true)}
-        className="text-left text-sm text-gray-700 hover:text-[#00A35E] hover:underline decoration-dashed underline-offset-2 transition-colors">
-        {value || <span className="text-gray-300 italic">{placeholder ?? 'Cliquer pour éditer'}</span>}
-      </button>
-    );
-  }
-  return (
-    <div className="flex items-center gap-1">
-      <input
-        type={type}
-        value={val}
-        onChange={e => setVal(e.target.value)}
-        autoFocus
-        className="text-sm border border-[#00C875] rounded-lg px-2 py-1 focus:outline-none w-40"
-      />
-      <button onClick={() => { onSave(val); setEditing(false); }}
-        className="text-[#00C875] hover:text-[#00A35E]"><Check size={14} /></button>
-      <button onClick={() => { setVal(value); setEditing(false); }}
-        className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
-    </div>
-  );
-}
 
 // ── Role chip ──────────────────────────────────────────────────
 function RoleChip({ role }: { role: string }) {

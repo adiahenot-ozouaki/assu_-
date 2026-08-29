@@ -260,7 +260,7 @@ export default function ReportingPage() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(v: any, n: any, p: any) => [
+                    formatter={(v: any, _n: any, p: any) => [
                       `${v} contrats · ${formatCurrency(p.payload.prime)}`,
                       p.payload.name,
                     ]}

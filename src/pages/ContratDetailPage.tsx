@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, AlertTriangle, CreditCard,
-  FileText, Shield, CheckCircle2, XCircle, Clock, RefreshCw, GitBranch,
+  FileText, Shield, CheckCircle2, RefreshCw, GitBranch,
 } from 'lucide-react';
 import { getContratById, updateContrat } from '../lib/contrats.service';
 import { genererQuittances } from '../lib/quittances.service';
