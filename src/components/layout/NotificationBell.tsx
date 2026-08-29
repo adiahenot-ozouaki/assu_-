@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, RefreshCw } from 'lucide-react';
 import {
@@ -37,12 +37,15 @@ interface NotificationBellProps {
 
 export function NotificationBell({ variant = 'dark' }: NotificationBellProps) {
   const navigate = useNavigate();
+  const instanceId = useId().replace(/:/g, '');
   const [open, setOpen]               = useState(false);
   const [notifs, setNotifs]           = useState<Notification[]>([]);
   const [count, setCount]             = useState(0);
   const [loading, setLoading]         = useState(false);
   const [triggering, setTriggering]   = useState(false);
   const dropdownRef                   = useRef<HTMLDivElement>(null);
+  const openRef                       = useRef(open);
+  openRef.current = open;
 
   const loadNotifs = useCallback(async () => {
     const [list, c] = await Promise.all([getNotifications(15), countNonLues()]);
@@ -50,28 +53,37 @@ export function NotificationBell({ variant = 'dark' }: NotificationBellProps) {
     setCount(c);
   }, []);
 
-  useEffect(() => { loadNotifs(); }, [loadNotifs]);
+  const loadNotifsRef = useRef(loadNotifs);
+  loadNotifsRef.current = loadNotifs;
+
+  useEffect(() => {
+    loadNotifs();
+  }, [loadNotifs]);
 
   useEffect(() => {
     const interval = setInterval(() => countNonLues().then(setCount), 120_000);
     return () => clearInterval(interval);
   }, []);
 
+  // Canal Realtime unique par instance (plusieurs cloches : sidebar desktop + mobile + header)
   useEffect(() => {
+    const topic = `notifications-changes-${instanceId}`;
     const channel = supabase
-      .channel('notifications-changes')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-      }, () => {
-        countNonLues().then(setCount);
-        if (open) loadNotifs();
-      })
+      .channel(topic)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        () => {
+          countNonLues().then(setCount);
+          if (openRef.current) loadNotifsRef.current();
+        }
+      )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [open, loadNotifs]);
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [instanceId]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -83,7 +95,6 @@ export function NotificationBell({ variant = 'dark' }: NotificationBellProps) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Escape to close
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
