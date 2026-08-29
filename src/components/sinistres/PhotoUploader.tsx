@@ -23,7 +23,7 @@ interface FileItem {
   progress: number;
   error?: string;
   document?: SinistreDocument;
-  preview?: string; // data URL for images
+  preview?: string;
 }
 
 interface PhotoUploaderProps {
@@ -37,7 +37,7 @@ function getFileIcon(file: File) {
   if (file.type.startsWith('image/')) return <FileImage size={20} className="text-blue-500" />;
   if (file.type === 'application/pdf') return <FileText size={20} className="text-red-500" />;
   if (file.type.startsWith('video/')) return <Film size={20} className="text-purple-500" />;
-  return <FileText size={20} className="text-gray-400" />;
+  return <FileText size={20} className="text-ink-subtle" />;
 }
 
 function formatSize(bytes: number) {
@@ -67,7 +67,6 @@ export function PhotoUploader({ sinistre_id, existingDocs = [], onDocumentAdded,
           status:   'pending',
           progress: 0,
         };
-        // Preview for images
         if (f.type.startsWith('image/')) {
           const reader = new FileReader();
           reader.onload = e => {
@@ -99,7 +98,6 @@ export function PhotoUploader({ sinistre_id, existingDocs = [], onDocumentAdded,
     setItems(prev => prev.map(i => i.id === item.id
       ? { ...i, status: 'uploading', progress: 10 } : i));
     try {
-      // Simulate progress
       const progressInterval = setInterval(() => {
         setItems(prev => prev.map(i =>
           i.id === item.id && i.status === 'uploading'
@@ -143,17 +141,20 @@ export function PhotoUploader({ sinistre_id, existingDocs = [], onDocumentAdded,
 
   return (
     <div className="space-y-4">
-      {/* Zone drag & drop */}
       <div
         onDragOver={e => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         onClick={() => inputRef.current?.click()}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click(); } }}
+        aria-label="Zone de dépôt de fichiers"
         className={clsx(
           'border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all',
           dragging
-            ? 'border-[#00C875] bg-[#00C875]/8 scale-[1.01]'
-            : 'border-gray-200 hover:border-[#00C875]/50 hover:bg-gray-50'
+            ? 'border-brand bg-brand-soft scale-[1.01]'
+            : 'border-border hover:border-brand/50 hover:bg-surface-3'
         )}
       >
         <input
@@ -167,25 +168,24 @@ export function PhotoUploader({ sinistre_id, existingDocs = [], onDocumentAdded,
         <div className="flex flex-col items-center gap-3">
           <div className={clsx(
             'w-14 h-14 rounded-full flex items-center justify-center transition-all',
-            dragging ? 'bg-[#00C875]/20' : 'bg-gray-100'
+            dragging ? 'bg-brand-soft' : 'bg-surface-3'
           )}>
-            <Upload size={24} className={dragging ? 'text-[#00C875]' : 'text-gray-400'} />
+            <Upload size={24} className={dragging ? 'text-brand' : 'text-ink-subtle'} aria-hidden />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-700">
+            <p className="text-sm font-medium text-ink">
               {dragging ? 'Déposer les fichiers ici' : 'Glissez vos fichiers ou cliquez pour sélectionner'}
             </p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-ink-subtle mt-1">
               Photos, PDF, vidéos · Max {MAX_SIZE_MB} Mo par fichier
             </p>
           </div>
         </div>
       </div>
 
-      {/* Documents existants */}
       {existingDocs.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+          <p className="text-xs font-semibold text-ink-subtle uppercase tracking-wider mb-2">
             Documents enregistrés ({existingDocs.length})
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -201,20 +201,19 @@ export function PhotoUploader({ sinistre_id, existingDocs = [], onDocumentAdded,
         </div>
       )}
 
-      {/* Nouveaux fichiers à uploader */}
       {items.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-ink-subtle uppercase tracking-wider">
               Nouveaux fichiers ({items.length})
             </p>
             {hasPending && (
               <button
                 type="button"
                 onClick={uploadAll}
-                className="text-xs font-semibold text-[#00A35E] bg-[#00C875]/10 hover:bg-[#00C875]/20 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                className="text-xs font-semibold text-brand-dark bg-brand-soft hover:opacity-90 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
               >
-                <Upload size={12} /> Tout uploader
+                <Upload size={12} aria-hidden /> Tout uploader
               </button>
             )}
           </div>
@@ -236,7 +235,6 @@ export function PhotoUploader({ sinistre_id, existingDocs = [], onDocumentAdded,
   );
 }
 
-// ── Existing doc card ─────────────────────────────────────────
 function ExistingDocCard({ doc, deleting, onDelete }: {
   doc: SinistreDocument;
   deleting: boolean;
@@ -246,8 +244,7 @@ function ExistingDocCard({ doc, deleting, onDelete }: {
   const typeCfg = TYPE_DOC_OPTIONS.find(t => t.value === doc.type_doc) ?? TYPE_DOC_OPTIONS[0];
 
   return (
-    <div className="relative group rounded-xl border border-gray-100 overflow-hidden bg-gray-50">
-      {/* Thumbnail ou icon */}
+    <div className="relative group rounded-xl border border-border overflow-hidden bg-surface-3">
       {isImage && doc.url_public ? (
         <a href={doc.url_public} target="_blank" rel="noopener noreferrer">
           <img
@@ -258,21 +255,20 @@ function ExistingDocCard({ doc, deleting, onDelete }: {
         </a>
       ) : (
         <a href={doc.url_public ?? '#'} target="_blank" rel="noopener noreferrer"
-          className="flex items-center justify-center h-24 text-3xl hover:bg-gray-100 transition-colors">
+          className="flex items-center justify-center h-24 text-3xl hover:bg-surface-2 transition-colors">
           {typeCfg.icon}
         </a>
       )}
-      {/* Footer */}
       <div className="p-2">
-        <p className="text-xs font-medium text-gray-700 truncate">{doc.nom_fichier}</p>
-        <p className="text-xs text-gray-400">{typeCfg.icon} {typeCfg.label}</p>
+        <p className="text-xs font-medium text-ink truncate">{doc.nom_fichier}</p>
+        <p className="text-xs text-ink-subtle">{typeCfg.icon} {typeCfg.label}</p>
       </div>
-      {/* Delete btn */}
       <button
         type="button"
         onClick={onDelete}
         disabled={deleting}
-        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+        aria-label={`Supprimer ${doc.nom_fichier}`}
+        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex items-center justify-center"
       >
         {deleting ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
       </button>
@@ -280,7 +276,6 @@ function ExistingDocCard({ doc, deleting, onDelete }: {
   );
 }
 
-// ── File item row ─────────────────────────────────────────────
 function FileItemRow({ item, onTypeChange, onRemove, onUpload }: {
   item: FileItem;
   onTypeChange: (t: SinistreDocument['type_doc']) => void;
@@ -289,38 +284,36 @@ function FileItemRow({ item, onTypeChange, onRemove, onUpload }: {
 }) {
   const statusIcons = {
     pending:   null,
-    uploading: <Loader2 size={16} className="animate-spin text-[#00C875]" />,
-    done:      <CheckCircle2 size={16} className="text-[#00C875]" />,
+    uploading: <Loader2 size={16} className="animate-spin text-brand" />,
+    done:      <CheckCircle2 size={16} className="text-brand" />,
     error:     <AlertCircle  size={16} className="text-red-500" />,
   };
 
   return (
     <div className={clsx(
       'flex items-center gap-3 p-3 rounded-xl border transition-all',
-      item.status === 'done'  && 'bg-emerald-50 border-emerald-200',
-      item.status === 'error' && 'bg-red-50 border-red-200',
-      item.status === 'pending' || item.status === 'uploading'
-        ? 'bg-white border-gray-200' : '',
+      item.status === 'done'  && 'bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/30',
+      item.status === 'error' && 'bg-red-50 border-red-200 dark:bg-red-500/10 dark:border-red-500/30',
+      (item.status === 'pending' || item.status === 'uploading') && 'bg-surface-2 border-border',
     )}>
-      {/* Preview or icon */}
-      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0 flex items-center justify-center">
+      <div className="w-10 h-10 rounded-lg overflow-hidden bg-surface-3 shrink-0 flex items-center justify-center">
         {item.preview
           ? <img src={item.preview} alt="" className="w-full h-full object-cover" />
           : getFileIcon(item.file)
         }
       </div>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-800 truncate">{item.file.name}</p>
+        <p className="text-sm font-medium text-ink truncate">{item.file.name}</p>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs text-gray-400">{formatSize(item.file.size)}</span>
+          <span className="text-xs text-ink-subtle">{formatSize(item.file.size)}</span>
           {item.status === 'pending' && (
             <select
               value={item.type_doc}
               onChange={e => onTypeChange(e.target.value as SinistreDocument['type_doc'])}
               onClick={e => e.stopPropagation()}
-              className="text-xs border border-gray-200 rounded px-1.5 py-0.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#00C875]"
+              aria-label="Type de document"
+              className="text-xs border border-border rounded px-1.5 py-0.5 bg-surface-2 text-ink focus:outline-none focus:ring-1 focus:ring-brand"
             >
               {TYPE_DOC_OPTIONS.map(t => (
                 <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
@@ -331,32 +324,30 @@ function FileItemRow({ item, onTypeChange, onRemove, onUpload }: {
             <span className="text-xs text-red-500">{item.error}</span>
           )}
         </div>
-        {/* Progress bar */}
         {item.status === 'uploading' && (
-          <div className="mt-1.5 h-1 bg-gray-200 rounded-full overflow-hidden">
+          <div className="mt-1.5 h-1 bg-surface-3 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#00C875] rounded-full transition-all duration-300"
+              className="h-full bg-brand rounded-full transition-all duration-300"
               style={{ width: `${item.progress}%` }}
             />
           </div>
         )}
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-1.5 shrink-0">
         {statusIcons[item.status]}
         {item.status === 'pending' && (
           <button
             type="button"
             onClick={onUpload}
-            className="text-xs font-semibold text-[#00A35E] bg-[#00C875]/10 hover:bg-[#00C875]/20 px-2.5 py-1 rounded-lg transition-colors"
+            className="text-xs font-semibold text-brand-dark bg-brand-soft hover:opacity-90 px-2.5 py-1 rounded-lg transition-colors"
           >
             Uploader
           </button>
         )}
         {item.status !== 'uploading' && item.status !== 'done' && (
-          <button type="button" onClick={onRemove}
-            className="text-gray-300 hover:text-gray-500 transition-colors">
+          <button type="button" onClick={onRemove} aria-label="Retirer"
+            className="text-ink-subtle hover:text-ink-muted transition-colors">
             <X size={15} />
           </button>
         )}
