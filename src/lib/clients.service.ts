@@ -2,6 +2,14 @@ import { supabase } from './supabase';
 import type { Client, ClientInsert, FilterParams, PaginatedResult } from '../types';
 
 const TABLE = 'clients';
+
+/** Liste : jointure légère (évite timeout PostgREST + RLS) */
+const SELECT_LIST = `
+  *,
+  agent:profiles!agent_id(id, nom, prenom)
+`;
+
+/** Fiche / CRUD : détail agent + courtier */
 const SELECT_FULL = `
   *,
   agent:profiles!agent_id(id, nom, prenom, email),
@@ -16,14 +24,17 @@ export async function getClients(params: FilterParams = {}): Promise<PaginatedRe
 
   let query = supabase
     .from(TABLE)
-    .select(SELECT_FULL, { count: 'exact' })
+    .select(SELECT_LIST, { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, to);
 
   if (search) {
-    query = query.or(
-      `nom.ilike.%${search}%,prenom.ilike.%${search}%,code_client.ilike.%${search}%,email.ilike.%${search}%,telephone.ilike.%${search}%`
-    );
+    const q = search.trim().replace(/,/g, ' ');
+    if (q) {
+      query = query.or(
+        `nom.ilike.%${q}%,prenom.ilike.%${q}%,code_client.ilike.%${q}%,email.ilike.%${q}%,telephone.ilike.%${q}%,raison_sociale.ilike.%${q}%`
+      );
+    }
   }
   if (status) query = query.eq('status', status);
   if (agent_id) query = query.eq('agent_id', agent_id);

@@ -19,6 +19,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -26,10 +27,19 @@ export default function ClientsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const result = await getClients({ search, status: status || undefined, page, pageSize: PAGE_SIZE });
       setClients(result.data);
       setTotal(result.count);
+    } catch (e: unknown) {
+      const msg =
+        e && typeof e === 'object' && 'message' in e
+          ? String((e as { message: string }).message)
+          : 'Impossible de charger les clients';
+      setError(msg);
+      setClients([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
@@ -48,7 +58,6 @@ export default function ClientsPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-5">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-ink font-display">Clients</h1>
@@ -59,7 +68,20 @@ export default function ClientsPage() {
         </Button>
       </div>
 
-      {/* Filtres */}
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-500/10 dark:border-red-500/30 px-4 py-3 text-sm text-red-700 dark:text-red-300" role="alert">
+          <p className="font-medium">Erreur de chargement</p>
+          <p className="mt-0.5 opacity-90">{error}</p>
+          <p className="mt-2 text-xs opacity-80">
+            Si le message parle de timeout, exécutez la migration{' '}
+            <code className="font-mono">fix_002_rls_performance.sql</code> dans Supabase SQL Editor.
+          </p>
+          <Button size="sm" variant="secondary" className="mt-3" onClick={load}>
+            Réessayer
+          </Button>
+        </div>
+      )}
+
       <Card className="p-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -88,13 +110,12 @@ export default function ClientsPage() {
         </div>
       </Card>
 
-      {/* Table desktop / cards mobile */}
       <Card className="overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16" role="status">
             <Spinner className="w-6 h-6 text-brand" />
           </div>
-        ) : clients.length === 0 ? (
+        ) : clients.length === 0 && !error ? (
           <EmptyState
             icon="👥"
             title="Aucun client trouvé"
@@ -105,9 +126,8 @@ export default function ClientsPage() {
                 : undefined
             }
           />
-        ) : (
+        ) : clients.length > 0 ? (
           <>
-            {/* Mobile cards */}
             <div className="md:hidden divide-y divide-border">
               {clients.map(client => (
                 <button
@@ -146,7 +166,6 @@ export default function ClientsPage() {
               ))}
             </div>
 
-            {/* Desktop table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -214,7 +233,7 @@ export default function ClientsPage() {
               </table>
             </div>
           </>
-        )}
+        ) : null}
 
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-border">
