@@ -1,19 +1,14 @@
 import { Input, Select } from '../ui';
 
-// ── Helper ────────────────────────────────────────────────────
 function SectionTitle({ icon, title }: { icon: string; title: string }) {
   return (
     <div className="flex items-center gap-2 pt-1">
-      <span className="text-base">{icon}</span>
-      <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
-      <div className="flex-1 h-px bg-gray-100" />
+      <span className="text-base" aria-hidden>{icon}</span>
+      <h3 className="text-sm font-semibold text-ink">{title}</h3>
+      <div className="flex-1 h-px bg-surface-3" />
     </div>
   );
 }
-
-// ═══════════════════════════════════════════════════════════════
-// MRH – Multirisque Habitation
-// ═══════════════════════════════════════════════════════════════
 
 const TYPE_LOGEMENT = [
   { value: '',           label: 'Sélectionner…'   },
@@ -90,13 +85,13 @@ export function MRHGaranties({ values, onChange }: { values: Record<string, bool
         {garanties.map(g => (
           <label key={g.key}
             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-              values[g.key] ? 'border-[#00C875] bg-[#00C875]/8' : 'border-gray-200 hover:border-gray-300'
+              values[g.key] ? 'border-brand bg-brand-soft' : 'border-border hover:border-border-strong'
             }`}>
             <input type="checkbox" checked={!!values[g.key]} disabled={g.required}
               onChange={e => onChange(g.key, e.target.checked)}
-              className="accent-[#00C875] w-4 h-4" />
-            <span className="text-sm font-medium text-gray-800">
-              {g.label}{g.required && <span className="ml-1 text-xs text-gray-400">(obligatoire)</span>}
+              className="accent-brand w-4 h-4" />
+            <span className="text-sm font-medium text-ink">
+              {g.label}{g.required && <span className="ml-1 text-xs text-ink-subtle">(obligatoire)</span>}
             </span>
           </label>
         ))}
@@ -104,10 +99,6 @@ export function MRHGaranties({ values, onChange }: { values: Record<string, bool
     </div>
   );
 }
-
-// ═══════════════════════════════════════════════════════════════
-// SANTÉ
-// ═══════════════════════════════════════════════════════════════
 
 const REGIME_OPTIONS = [
   { value: '',             label: 'Sélectionner…'         },
@@ -179,13 +170,13 @@ export function SanteGaranties({ values, onChange }: { values: Record<string, bo
         {garanties.map(g => (
           <label key={g.key}
             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-              values[g.key] ? 'border-[#00C875] bg-[#00C875]/8' : 'border-gray-200 hover:border-gray-300'
+              values[g.key] ? 'border-brand bg-brand-soft' : 'border-border hover:border-border-strong'
             }`}>
             <input type="checkbox" checked={!!values[g.key]} disabled={g.required}
               onChange={e => onChange(g.key, e.target.checked)}
-              className="accent-[#00C875] w-4 h-4" />
-            <span className="text-sm font-medium text-gray-800">
-              {g.label}{g.required && <span className="ml-1 text-xs text-gray-400">(obligatoire)</span>}
+              className="accent-brand w-4 h-4" />
+            <span className="text-sm font-medium text-ink">
+              {g.label}{g.required && <span className="ml-1 text-xs text-ink-subtle">(obligatoire)</span>}
             </span>
           </label>
         ))}
@@ -193,10 +184,6 @@ export function SanteGaranties({ values, onChange }: { values: Record<string, bo
     </div>
   );
 }
-
-// ═══════════════════════════════════════════════════════════════
-// VIE
-// ═══════════════════════════════════════════════════════════════
 
 const TYPE_VIE_OPTIONS = [
   { value: '',               label: 'Sélectionner…'         },
@@ -222,13 +209,13 @@ export function VieObjetForm({ register, errors }: { register: any; errors: any 
         <Input label="Profession" placeholder="Ingénieur, fonctionnaire…"
           {...register(f('profession'))} />
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">Fumeur ?</label>
+          <label className="block text-sm font-medium text-ink">Fumeur ?</label>
           <div className="flex gap-3 pt-1">
             {['Non', 'Oui'].map(v => (
               <label key={v} className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" value={v === 'Oui' ? 'oui' : 'non'}
-                  {...register(f('fumeur'))} className="accent-[#00C875]" />
-                <span className="text-sm text-gray-700">{v}</span>
+                  {...register(f('fumeur'))} className="accent-brand" />
+                <span className="text-sm text-ink">{v}</span>
               </label>
             ))}
           </div>
@@ -276,13 +263,13 @@ export function VieGaranties({ values, onChange }: { values: Record<string, bool
         {garanties.map(g => (
           <label key={g.key}
             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-              values[g.key] ? 'border-[#00C875] bg-[#00C875]/8' : 'border-gray-200 hover:border-gray-300'
+              values[g.key] ? 'border-brand bg-brand-soft' : 'border-border hover:border-border-strong'
             }`}>
             <input type="checkbox" checked={!!values[g.key]} disabled={g.required}
               onChange={e => onChange(g.key, e.target.checked)}
-              className="accent-[#00C875] w-4 h-4" />
-            <span className="text-sm font-medium text-gray-800">
-              {g.label}{g.required && <span className="ml-1 text-xs text-gray-400">(obligatoire)</span>}
+              className="accent-brand w-4 h-4" />
+            <span className="text-sm font-medium text-ink">
+              {g.label}{g.required && <span className="ml-1 text-xs text-ink-subtle">(obligatoire)</span>}
             </span>
           </label>
         ))}
@@ -290,10 +277,6 @@ export function VieGaranties({ values, onChange }: { values: Record<string, bool
     </div>
   );
 }
-
-// ═══════════════════════════════════════════════════════════════
-// AUTRE (champs libres)
-// ═══════════════════════════════════════════════════════════════
 
 export function AutreObjetForm({ register }: { register: any }) {
   const f = (n: string) => `objet_assure.${n}`;
@@ -306,10 +289,10 @@ export function AutreObjetForm({ register }: { register: any }) {
         <Input label="Valeur assurée (FCFA)" type="number"
           {...register(f('valeur'), { min: 0 })} />
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description détaillée</label>
+          <label className="block text-sm font-medium text-ink mb-1">Description détaillée</label>
           <textarea rows={4} placeholder="Décrivez l'objet ou le risque assuré…"
             {...register(f('description'))}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00C875] focus:border-transparent resize-none" />
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm text-ink bg-surface-2 placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none" />
         </div>
         <Input label="Lieu / Zone de risque" placeholder="Ex : Port de Libreville"
           {...register(f('lieu'))} />
