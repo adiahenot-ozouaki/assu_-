@@ -110,7 +110,7 @@ export default function SinistreDetailPage() {
           <Button variant="secondary" onClick={load}>
             <RefreshCw size={14} aria-hidden /> Actualiser
           </Button>
-          <PdfButton type="sinistre" id={sinistre.id} ref={sinistre.numero} size="sm" />
+          <PdfButton type="sinistre" id={sinistre.id} docRef={sinistre.numero} size="sm" />
           {!isClosed && (
             <Button variant="secondary" onClick={() => setEditMode(!editMode)}>
               <Edit2 size={14} aria-hidden /> {editMode ? 'Annuler édition' : 'Modifier'}
