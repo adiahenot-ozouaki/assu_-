@@ -145,7 +145,6 @@ export default function QuittancesPage() {
           />
         ) : (
           <>
-            {/* Mobile cards */}
             <div className="md:hidden divide-y divide-border">
               {rows.map(row => {
                 const cfg = STATUS_CFG[row.status as PaiementStatus] ?? STATUS_CFG['en_attente'];
@@ -183,7 +182,7 @@ export default function QuittancesPage() {
                     </div>
                     {(row.status === 'en_attente' || row.status === 'en_retard') && (
                       <div className="flex items-center gap-2 pt-1">
-                        <PdfButton type="quittance" id={row.id} ref={row.numero} variant="icon" mode="both" />
+                        <PdfButton type="quittance" id={row.id} docRef={row.numero} variant="icon" mode="both" />
                         <Button size="sm" onClick={() => setModal(row)}>Encaisser</Button>
                       </div>
                     )}
@@ -192,7 +191,6 @@ export default function QuittancesPage() {
               })}
             </div>
 
-            {/* Desktop table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -266,7 +264,7 @@ export default function QuittancesPage() {
                         </td>
                         <td className="px-4 py-3.5 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <PdfButton type="quittance" id={row.id} ref={row.numero} variant="icon" mode="both" />
+                            <PdfButton type="quittance" id={row.id} docRef={row.numero} variant="icon" mode="both" />
                             {(row.status === 'en_attente' || row.status === 'en_retard') && (
                               <Button size="sm" onClick={() => setModal(row)}>
                                 Encaisser
