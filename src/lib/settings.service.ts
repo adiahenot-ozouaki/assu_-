@@ -21,6 +21,8 @@ export interface Invitation {
   email: string;
   role: string;
   agence_id?: string;
+  /** Présent si la colonne existe en DB (lien d'invitation) */
+  token?: string;
   expire_at: string;
   accepte: boolean;
   created_at: string;
